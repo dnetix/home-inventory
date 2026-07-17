@@ -52,6 +52,14 @@
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test"
         ],
+        "perf": [
+            "@php artisan optimize",
+            "@php artisan octane:reload"
+        ],
+        "perf:off": [
+            "@php artisan optimize:clear",
+            "@php artisan octane:reload"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
