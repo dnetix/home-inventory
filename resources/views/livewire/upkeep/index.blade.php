@@ -7,16 +7,26 @@
 @endphp
 
 <div class="mx-auto flex w-full max-w-2xl flex-1 flex-col lg:mx-0 lg:max-w-none">
-    {{-- Header --}}
-    <div class="flex items-end justify-between gap-3 px-5 pt-8 lg:px-[30px] lg:pt-[26px]">
+    {{-- Header (mobile — desktop heading + actions live in the top bar) --}}
+    <div class="flex items-end justify-between gap-3 px-5 pt-8 lg:hidden">
         <div>
-            <h1 class="text-[30px] font-extrabold tracking-[-0.4px] lg:text-[26px]">Upkeep</h1>
+            <h1 class="text-[30px] font-extrabold tracking-[-0.4px]">Upkeep</h1>
             <p class="mt-[3px] text-[13.5px] font-medium text-ink-2">Maintenance &amp; expiry</p>
         </div>
         <x-ui.icon-btn icon="plus" accent wire:click="openCreate" />
     </div>
 
-    <div class="grid flex-1 gap-[18px] px-5 pt-1 pb-6 lg:grid-cols-[1fr_360px] lg:px-[30px] lg:pb-[30px]">
+    @teleport('#topbar-page')
+        <x-topbar-heading title="Upkeep" subtitle="Maintenance & expiry" />
+    @endteleport
+
+    @teleport('#topbar-actions')
+        <x-ui.btn variant="tonal" size="sm" wire:click="openCreate">
+            <x-icon name="plus" :size="16" /> Add task
+        </x-ui.btn>
+    @endteleport
+
+    <div class="grid flex-1 gap-[18px] px-5 pt-1 pb-6 lg:grid-cols-[1fr_360px] lg:px-[30px] lg:pt-4 lg:pb-[30px]">
         <div class="min-w-0">
             {{-- Month calendar --}}
             <x-ui.card class="mb-[22px] px-4 pt-3.5 pb-4">

@@ -3,16 +3,31 @@
 @endphp
 
 <div class="mx-auto flex w-full flex-1 flex-col lg:max-w-none">
-    {{-- Header --}}
-    <div class="flex items-end justify-between gap-3 px-5 pt-8 lg:px-[30px] lg:pt-[26px]">
+    {{-- Header (mobile — desktop heading + actions live in the top bar) --}}
+    <div class="flex items-end justify-between gap-3 px-5 pt-8 lg:hidden">
         <div>
-            <h1 class="text-[30px] font-extrabold tracking-[-0.4px] lg:text-[26px]">Items</h1>
+            <h1 class="text-[30px] font-extrabold tracking-[-0.4px]">Items</h1>
             <p class="mt-[3px] text-[13.5px] font-medium text-ink-2">
                 {{ $this->stats['count'] }} {{ Str::plural('item', $this->stats['count']) }} · {{ $this->stats['units'] }} units
             </p>
         </div>
         <div class="flex items-center gap-2">
-            <x-ui.seg class="hidden lg:inline-flex">
+            <a href="{{ route('find') }}" wire:navigate>
+                <x-ui.icon-btn icon="search" />
+            </a>
+            <x-ui.icon-btn icon="sliders" :accent="$missing !== ''" wire:click="$set('filterOpen', true)" />
+        </div>
+    </div>
+
+    @teleport('#topbar-page')
+        <x-topbar-heading title="Items"
+            :subtitle="$this->stats['count'] . ' ' . Str::plural('item', $this->stats['count']) . ' · ' . $this->stats['units'] . ' units'" />
+    @endteleport
+
+    @teleport('#topbar-actions')
+        {{-- Single root: x-teleport only carries the first element --}}
+        <div class="flex items-center gap-2">
+            <x-ui.seg>
                 <x-ui.seg-btn :on="$view === 'table'" wire:click="setView('table')">
                     <x-icon name="list" :size="15" /> Table
                 </x-ui.seg-btn>
@@ -20,19 +35,9 @@
                     <x-icon name="box" :size="15" /> Grid
                 </x-ui.seg-btn>
             </x-ui.seg>
-
-            <a href="{{ route('find') }}" wire:navigate>
-                <x-ui.icon-btn icon="search" />
-            </a>
             <x-ui.icon-btn icon="sliders" :accent="$missing !== ''" wire:click="$set('filterOpen', true)" />
-
-            <a href="{{ route('items.create') }}" wire:navigate class="hidden lg:block">
-                <x-ui.btn variant="primary" size="sm">
-                    <x-icon name="plus" :size="17" /> Add item
-                </x-ui.btn>
-            </a>
         </div>
-    </div>
+    @endteleport
 
     {{-- Category chips --}}
     <div class="flex gap-2 overflow-x-auto px-5 py-3 lg:px-[30px]" style="scrollbar-width: none">

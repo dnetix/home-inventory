@@ -47,6 +47,7 @@ Login: `dnetix@gmail.com` / `password` (seeded via `php artisan migrate:fresh --
 - The app container has no GD: in tests fake images with `UploadedFile::fake()->create('x.jpg', 128, 'image/jpeg')`, never `->image()`.
 - `User` mirrors DB defaults in `$attributes` (unit/theme/notifications) — keep that in sync if columns are added; Livewire tests use in-memory models that never see DB defaults.
 - Artisan-generated files must be Read before Write/Edit when using file tools.
+- Desktop top bar (in `layouts/app.blade.php`): screens teleport their heading/actions into `#topbar-page` / `#topbar-actions` via `@teleport` (`<x-topbar-heading>` for the title). Each `@teleport` block carries only its FIRST root element (Alpine x-teleport) — wrap multiple actions in a single div.
 - Item photos: `Item::booted()` deletes the S3 object on item delete; the Items\Form component deletes the old object on replace/remove. Bucket is private; display uses 30-min `temporaryUrl`s.
 
 ## Working agreements with the user
@@ -56,6 +57,7 @@ Login: `dnetix@gmail.com` / `password` (seeded via `php artisan migrate:fresh --
 - PHPUnit only (never Pest); factories with states; feature tests per module including a cross-home isolation case.
 - Keep both layouts (mobile + desktop) in mind for every screen change; compare against the design project when fidelity matters.
 </application-guidelines>
+
 
 <laravel-boost-guidelines>
 === foundation rules ===
@@ -229,6 +231,6 @@ When working on Octane-specific features (concurrency, shared tables, memory, dr
 - Run the minimal number of tests, using an appropriate filter, before finalizing.
 - To run all tests: `php artisan test --compact`.
 - To run all tests in a file: `php artisan test --compact tests/Feature/ExampleTest.php`.
-- To filter on a particular test name: `php artisan test --compact --filter=testName` (recommended after making a change to a related file).
-
+- To filter on a particular test name: `php artisan test --compact --filter=testName` (recommended after making a change to a related file)
 </laravel-boost-guidelines>
+

@@ -4,10 +4,10 @@
 @endphp
 
 <div class="mx-auto flex w-full max-w-2xl flex-1 flex-col lg:mx-0 lg:max-w-none">
-    {{-- Header --}}
-    <div class="flex items-end justify-between gap-3 px-5 pt-8 lg:px-[30px] lg:pt-[26px]">
+    {{-- Header (mobile — desktop heading + actions live in the top bar) --}}
+    <div class="flex items-end justify-between gap-3 px-5 pt-8 lg:hidden">
         <div>
-            <h1 class="text-[30px] font-extrabold tracking-[-0.4px] lg:text-[26px]">Home</h1>
+            <h1 class="text-[30px] font-extrabold tracking-[-0.4px]">Home</h1>
             <p class="mt-[3px] text-[13.5px] font-medium text-ink-2">{{ today()->format('l, F j') }}</p>
         </div>
         <a href="{{ route('upkeep.index') }}" wire:navigate class="relative">
@@ -19,6 +19,21 @@
             @endif
         </a>
     </div>
+
+    @teleport('#topbar-page')
+        <x-topbar-heading title="Home" :subtitle="today()->format('l, F j')" />
+    @endteleport
+
+    @teleport('#topbar-actions')
+        <a href="{{ route('upkeep.index') }}" wire:navigate class="relative">
+            <x-ui.icon-btn icon="bell" />
+            @if ($stats['attention'] > 0)
+                <span class="absolute -top-[3px] -right-[3px] flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-screen bg-bad px-1 text-[10.5px] font-bold text-white">
+                    {{ $stats['attention'] }}
+                </span>
+            @endif
+        </a>
+    @endteleport
 
     <div class="flex-1 px-5 pt-3 pb-6 lg:px-[30px] lg:pb-[30px]">
         {{-- Search (mobile) --}}

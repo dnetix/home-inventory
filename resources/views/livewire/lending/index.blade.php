@@ -1,14 +1,24 @@
 <div class="mx-auto flex w-full max-w-2xl flex-1 flex-col lg:mx-0 lg:max-w-none">
-    {{-- Header --}}
-    <div class="flex items-end justify-between gap-3 px-5 pt-8 lg:px-[30px] lg:pt-[26px]">
+    {{-- Header (mobile — desktop heading + actions live in the top bar) --}}
+    <div class="flex items-end justify-between gap-3 px-5 pt-8 lg:hidden">
         <div>
-            <h1 class="text-[30px] font-extrabold tracking-[-0.4px] lg:text-[26px]">Lent out</h1>
+            <h1 class="text-[30px] font-extrabold tracking-[-0.4px]">Lent out</h1>
             <p class="mt-[3px] text-[13.5px] font-medium text-ink-2">{{ $this->summary['active'] }} out now</p>
         </div>
         <x-ui.btn variant="primary" size="sm" wire:click="openLend">
             <x-icon name="hand" :size="16" /> Lend an item
         </x-ui.btn>
     </div>
+
+    @teleport('#topbar-page')
+        <x-topbar-heading title="Lent out" :subtitle="$this->summary['active'] . ' out now'" />
+    @endteleport
+
+    @teleport('#topbar-actions')
+        <x-ui.btn variant="tonal" size="sm" wire:click="openLend">
+            <x-icon name="hand" :size="16" /> Lend an item
+        </x-ui.btn>
+    @endteleport
 
     {{-- Filter chips --}}
     <div class="flex gap-2 px-5 py-3 lg:px-[30px]">
