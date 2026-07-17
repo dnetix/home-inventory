@@ -7,7 +7,7 @@ HomeInventory is a responsive (mobile-first + desktop) web app for managing ever
 
 **The app is fully built and working.** All four planned phases are complete and committed (see `git log` — one commit per phase area): schema/domain/auth, items+places+categories+tags+search, lending+upkeep+dashboard, settings+account+MinIO photos. **114 tests passing** (`php artisan test`). The user is now testing the app; upcoming work will be modifications and new features, not greenfield building.
 
-Not built yet (deliberate): home-sharing/invite UI (schema supports it), reminder *delivery* (the settings toggle only persists), photo thumbnails in list views (lists show category glyphs; detail shows the photo), registration/password-reset (login only, seeded user), server-side photo resizing (no GD in the container).
+Not built yet (deliberate): home-sharing/invite UI (schema supports it), reminder *delivery* (the settings toggle only persists), registration/password-reset (login only, seeded user).
 
 ## Design source of truth
 
@@ -32,23 +32,25 @@ Everything PHP runs through Docker. App container: service `home-inventory`, nam
 - Pint (run after PHP changes): `docker compose exec home-inventory ./vendor/bin/pint --dirty --format agent`
 - Composer: `docker run --rm -v ${PWD}:/app composer:2 <cmd>`
 - Frontend: host has node — `npm run build` (ALWAYS rebuild after adding Tailwind classes in views, before browser-checking)
+- **After editing PHP files, run `docker compose exec home-inventory php artisan octane:reload`** — Octane runs 4 persistent workers (`--max-requests=500`), so PHP changes are NOT picked up until reload. Blade/view edits need no reload.
+- Perf-test mode: `docker compose exec home-inventory composer perf` (runs `artisan optimize` + octane:reload — production-like caches); back to dev with `composer perf:off`. **While perf mode is on, NEVER run `php artisan test` directly** — cached config overrides phpunit.xml's test DB and `RefreshDatabase` would hit the real `home_inventory` data. Use `composer test` (prefixed with config:clear) or run `perf:off` first; check `bootstrap/cache/config.php` doesn't exist before testing.
 
 Shared dev infra (separate compose at `D:\Works\www\developer_infraestructure\shared\compose.yml`, network `shared`):
 - **MySQL 8.4** host `db`, root/root — databases `home_inventory` + `home_inventory_test` (phpunit.xml points tests at the test DB; tests run on real MySQL for FULLTEXT parity)
 - **MinIO** bucket `home-inventory`, minioadmin/minioadmin, API `http://s3.test`, console `http://minio.test` — this repo's docker-compose maps `s3.test → host-gateway` so presigned URLs work from container AND browser; the Windows hosts file has `127.0.0.1 s3.test minio.test inventory.test` entries
-- **Traefik** serves the app at `http://inventory.test`; DbGate at `http://db-admin.test`; Redis at host `redis` (unused so far)
+- **Traefik** serves the app at `http://inventory.test`; DbGate at `http://db-admin.test`; **Redis** at host `redis` (cache + sessions)
 
 Login: `dnetix@gmail.com` / `password` (seeded via `php artisan migrate:fresh --seed` — DemoSeeder recreates the design prototype's dataset with relative dates). The user has real usage data now — **ask before running migrate:fresh.**
 
 ## Known gotchas
 
-- Octane runs `--max-requests=1`: after code changes the FIRST request may serve stale code — reload twice when verifying in a browser.
+- Octane workers persist (`--workers=4 --max-requests=500`): run `php artisan octane:reload` after PHP changes or the browser serves stale code. The code sits on a slow 9p Windows bind mount — that's why worker persistence + the OPcache tuning in the Dockerfile matter (see the perf-fix commits).
 - Livewire 4's layout config key is `component_layout` (NOT v3's `layout`); its default `layouts::app` hint doesn't exist here.
-- The app container has no GD: in tests fake images with `UploadedFile::fake()->create('x.jpg', 128, 'image/jpeg')`, never `->image()`.
+- Tests still fake images with `UploadedFile::fake()->create('x.jpg', 128, 'image/jpeg')` (works regardless of GD; the container now HAS gd+exif for `PhotoShrinker`).
 - `User` mirrors DB defaults in `$attributes` (unit/theme/notifications) — keep that in sync if columns are added; Livewire tests use in-memory models that never see DB defaults.
 - Artisan-generated files must be Read before Write/Edit when using file tools.
 - Desktop top bar (in `layouts/app.blade.php`): screens teleport their heading/actions into `#topbar-page` / `#topbar-actions` via `@teleport` (`<x-topbar-heading>` for the title). Each `@teleport` block carries only its FIRST root element (Alpine x-teleport) — wrap multiple actions in a single div.
-- Item photos: `Item::booted()` deletes the S3 object on item delete; the Items\Form component deletes the old object on replace/remove. Bucket is private; display uses 30-min `temporaryUrl`s.
+- Item photos: `Item::booted()` deletes the S3 object on item delete; the Items\Form component deletes the old object on replace/remove. Bucket is private; display uses 30-min `temporaryUrl`s. Size is capped at 1600px twice: `window.shrinkPhoto` (resources/js/app.js) downscales in the browser before upload, and `PhotoShrinker` (app/Support) re-encodes anything oversized server-side (`photos:shrink` re-runs it over stored objects).
 
 ## Working agreements with the user
 
