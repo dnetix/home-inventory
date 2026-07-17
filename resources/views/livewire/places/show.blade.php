@@ -111,8 +111,7 @@
             @forelse (($directItems->isNotEmpty() ? $directItems : $allItems)->take(6) as $item)
                 <a href="{{ route('items.show', $item) }}" wire:navigate wire:key="pi-{{ $item->id }}"
                     class="flex items-center gap-3 py-2.5">
-                    <x-ui.ph class="size-[42px] rounded-[10px]" :icon="$item->category?->glyph ?? 'box'"
-                        :tint="$item->category?->color" :icon-size="18" />
+                    <x-item-thumb class="size-[42px] rounded-[10px]" :item="$item" :icon-size="18" />
                     <div class="min-w-0 flex-1">
                         <div class="truncate text-[14px] font-semibold">{{ $item->name }}</div>
                         <div class="mt-0.5 truncate text-xs font-medium text-ink-3">

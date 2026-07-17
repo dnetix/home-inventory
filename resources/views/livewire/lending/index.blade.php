@@ -39,8 +39,7 @@
                 <div class="flex flex-col gap-[11px]">
                     @foreach ($this->lends as $lend)
                         <x-ui.card wire:key="lend-{{ $lend->id }}" class="flex items-center gap-[13px] px-3.5 py-3">
-                            <x-ui.ph class="size-[46px] rounded-xl" :icon="$lend->item->category?->glyph ?? 'box'"
-                                :tint="$lend->item->category?->color" />
+                            <x-item-thumb class="size-[46px] rounded-xl" :item="$lend->item" />
                             <div class="min-w-0 flex-1">
                                 <a href="{{ route('items.show', $lend->item) }}" wire:navigate
                                     class="block truncate text-[15px] font-semibold">{{ $lend->item->name }}</a>
@@ -118,8 +117,7 @@
                 <button type="button" wire:click="$set('itemPickerOpen', true)"
                     class="mb-4 flex w-full cursor-pointer items-center gap-3 rounded-[14px] border border-line bg-surface px-3.5 py-3 text-left shadow-sm">
                     @if ($pickedItem)
-                        <x-ui.ph class="size-12 rounded-xl" :icon="$pickedItem->category?->glyph ?? 'box'"
-                            :tint="$pickedItem->category?->color" />
+                        <x-item-thumb class="size-12 rounded-xl" :item="$pickedItem" />
                     @else
                         <span class="flex size-12 items-center justify-center rounded-xl bg-fill text-ink-3">
                             <x-icon name="box" :size="22" />
@@ -191,8 +189,7 @@
                     @forelse ($this->lendableItems as $item)
                         <button type="button" wire:key="li-{{ $item->id }}" wire:click="pickItem({{ $item->id }})"
                             class="flex cursor-pointer items-center gap-3 px-3.5 py-2.5 text-left hover:bg-fill">
-                            <x-ui.ph class="size-[38px] rounded-[10px]" :icon="$item->category?->glyph ?? 'box'"
-                                :tint="$item->category?->color" :icon-size="16" />
+                            <x-item-thumb class="size-[38px] rounded-[10px]" :item="$item" :icon-size="16" />
                             <span class="min-w-0 flex-1">
                                 <span class="block truncate text-[14px] font-semibold">{{ $item->name }}</span>
                                 <span class="block text-xs font-medium text-ink-3">{{ $item->place?->label ?? 'No location' }}</span>

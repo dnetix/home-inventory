@@ -120,8 +120,7 @@
                     @foreach ($this->recent as $item)
                         <a href="{{ route('items.show', $item) }}" wire:navigate wire:key="rc-{{ $item->id }}"
                             class="w-[116px] shrink-0 lg:w-auto">
-                            <x-ui.ph class="h-[92px] w-full rounded-[14px]" :icon="$item->category?->glyph ?? 'box'"
-                                :tint="$item->category?->color" :icon-size="26" />
+                            <x-item-thumb class="h-[92px] w-full rounded-[14px]" :item="$item" :icon-size="26" />
                             <div class="mt-[7px] truncate text-[13.5px] font-semibold">{{ $item->name }}</div>
                             <div class="truncate text-xs font-medium text-ink-3">{{ $item->place?->label ?? 'No location' }}</div>
                         </a>
@@ -184,8 +183,7 @@
                             @foreach ($this->activeLends as $lend)
                                 <a href="{{ route('lending.index') }}" wire:navigate wire:key="lo-{{ $lend->id }}"
                                     class="flex items-center gap-3 py-2.5">
-                                    <x-ui.ph class="size-9 rounded-[10px]" :icon="$lend->item->category?->glyph ?? 'box'"
-                                        :tint="$lend->item->category?->color" :icon-size="16" />
+                                    <x-item-thumb class="size-9 rounded-[10px]" :item="$lend->item" :icon-size="16" />
                                     <span class="min-w-0 flex-1">
                                         <span class="block truncate text-[14px] font-semibold">{{ $lend->item->name }}</span>
                                         <span class="block text-xs font-medium text-ink-3">{{ $lend->person }}</span>

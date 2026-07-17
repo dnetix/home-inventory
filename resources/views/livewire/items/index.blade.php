@@ -66,8 +66,7 @@
                 @foreach ($this->items as $item)
                     <a href="{{ route('items.show', $item) }}" wire:navigate wire:key="m-{{ $item->id }}"
                         class="flex items-center gap-3 py-2.5">
-                        <x-ui.ph class="size-[46px] rounded-[11px]" :icon="$item->category?->glyph ?? 'box'"
-                            :tint="$item->category?->color" />
+                        <x-item-thumb class="size-[46px] rounded-[11px]" :item="$item" />
                         <div class="min-w-0 flex-1">
                             <div class="truncate text-[15px] font-semibold">{{ $item->name }}</div>
                             <div class="mt-0.5 truncate text-[12.5px] font-medium text-ink-3">
@@ -123,8 +122,7 @@
                                     class="cursor-pointer border-b border-line last:border-0 {{ $selected === $item->id ? 'bg-accent-soft/60' : 'hover:bg-fill' }}">
                                     <td class="px-4 py-2.5">
                                         <div class="flex items-center gap-3">
-                                            <x-ui.ph class="size-9 rounded-[9px]" :icon="$item->category?->glyph ?? 'box'"
-                                                :tint="$item->category?->color" :icon-size="16" />
+                                            <x-item-thumb class="size-9 rounded-[9px]" :item="$item" :icon-size="16" />
                                             <div class="min-w-0">
                                                 <div class="truncate font-semibold">{{ $item->name }}</div>
                                                 @if ($item->note)
@@ -172,8 +170,7 @@
                     @foreach ($this->items as $item)
                         <x-ui.card wire:key="g-{{ $item->id }}" wire:click="select({{ $item->id }})"
                             class="cursor-pointer p-3 transition hover:shadow-md {{ $selected === $item->id ? 'ring-2 ring-accent' : '' }}">
-                            <x-ui.ph class="h-[110px] w-full rounded-[10px]" :icon="$item->category?->glyph ?? 'box'"
-                                :tint="$item->category?->color" :icon-size="30" />
+                            <x-item-thumb class="h-[110px] w-full rounded-[10px]" :item="$item" :icon-size="30" />
                             <div class="mt-2.5 flex items-start justify-between gap-2">
                                 <div class="min-w-0">
                                     <div class="truncate text-[14px] font-semibold">{{ $item->name }}</div>

@@ -51,8 +51,7 @@
                 @foreach ($this->results as $item)
                     <a href="{{ route('items.show', $item) }}" wire:navigate wire:key="r-{{ $item->id }}">
                         <x-ui.card class="flex items-center gap-3 px-3 py-2.5 transition active:scale-[0.98]">
-                            <x-ui.ph class="size-12 rounded-xl" :icon="$item->category?->glyph ?? 'box'"
-                                :tint="$item->category?->color" />
+                            <x-item-thumb class="size-12 rounded-xl" :item="$item" />
                             <div class="min-w-0 flex-1">
                                 <div class="truncate text-[15px] font-semibold">{{ $item->name }}</div>
                                 <div class="mt-[3px] flex items-center gap-1 text-xs font-semibold text-accent">

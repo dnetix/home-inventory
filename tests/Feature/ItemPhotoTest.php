@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\Items\Form;
+use App\Livewire\Items\Index;
 use App\Livewire\Items\Show;
 use App\Models\Home;
 use App\Models\Item;
@@ -85,6 +86,17 @@ class ItemPhotoTest extends TestCase
             ->call('delete');
 
         Storage::disk('s3')->assertMissing($path);
+    }
+
+    public function test_lists_show_the_photo_thumbnail_and_fall_back_to_the_glyph(): void
+    {
+        $path = UploadedFile::fake()->create('photo.jpg', 128, 'image/jpeg')->store('items/'.$this->home->id, 's3');
+        Item::factory()->for($this->home)->create(['name' => 'Espresso machine', 'photo_path' => $path]);
+        Item::factory()->for($this->home)->create(['name' => 'Cordless drill']);
+
+        Livewire::test(Index::class)
+            ->assertSeeHtml('alt="Espresso machine"')
+            ->assertDontSeeHtml('alt="Cordless drill"');
     }
 
     public function test_non_images_are_rejected(): void
