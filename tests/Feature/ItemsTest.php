@@ -129,6 +129,39 @@ class ItemsTest extends TestCase
         $this->assertSame($this->home->id, $item->home_id);
     }
 
+    public function test_form_remembers_the_last_used_place_and_category_for_the_next_item(): void
+    {
+        $category = Category::factory()->for($this->home)->create();
+        $place = Place::factory()->for($this->home)->create();
+
+        Livewire::test(Form::class)
+            ->set('form.name', 'Socket wrench')
+            ->set('form.categoryId', $category->id)
+            ->set('form.placeId', $place->id)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        Livewire::test(Form::class)
+            ->assertSet('form.placeId', $place->id)
+            ->assertSet('form.categoryId', $category->id);
+    }
+
+    public function test_form_does_not_prefill_from_another_homes_session_values(): void
+    {
+        $otherHome = Home::factory()->create();
+        $otherPlace = Place::factory()->for($otherHome)->create();
+        $otherCategory = Category::factory()->for($otherHome)->create();
+
+        session([
+            'items.last_place_id' => $otherPlace->id,
+            'items.last_category_id' => $otherCategory->id,
+        ]);
+
+        Livewire::test(Form::class)
+            ->assertSet('form.placeId', null)
+            ->assertSet('form.categoryId', null);
+    }
+
     public function test_form_requires_a_name_and_complete_dimensions(): void
     {
         Livewire::test(Form::class)

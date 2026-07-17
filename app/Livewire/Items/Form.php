@@ -40,6 +40,12 @@ class Form extends Component
             $this->form->setItem($item->load('tags'));
         } else {
             $this->authorize('create', Item::class);
+
+            // Making inventory means many items in a row from the same spot:
+            // prefill the pickers with what the last saved item used. Stale or
+            // cross-home ids resolve to null through the home-scoped queries.
+            $this->form->placeId = Place::query()->find(session('items.last_place_id'))?->id;
+            $this->form->categoryId = Category::query()->find(session('items.last_category_id'))?->id;
         }
     }
 
@@ -48,6 +54,13 @@ class Form extends Component
         $this->validate();
 
         $item = $this->form->save();
+
+        if ($this->form->item === null) {
+            session([
+                'items.last_place_id' => $item->place_id,
+                'items.last_category_id' => $item->category_id,
+            ]);
+        }
 
         $this->persistPhoto($item);
 
