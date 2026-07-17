@@ -1,0 +1,142 @@
+<?php
+
+namespace App\Livewire\Items;
+
+use App\Livewire\Forms\ItemForm;
+use App\Models\Category;
+use App\Models\Item;
+use App\Models\Place;
+use App\Models\Tag;
+use App\Support\PlaceTree;
+use App\Support\UnitFormatter;
+use Illuminate\Contracts\View\View;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\Computed;
+use Livewire\Attributes\Validate;
+use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
+
+class Form extends Component
+{
+    use AuthorizesRequests, WithFileUploads;
+
+    public ItemForm $form;
+
+    #[Validate('nullable|image|max:8192')]
+    public ?TemporaryUploadedFile $photo = null;
+
+    public bool $removePhoto = false;
+
+    public bool $placePickerOpen = false;
+
+    public function mount(?Item $item = null): void
+    {
+        if ($item?->exists) {
+            $this->authorize('update', $item);
+            $this->form->setItem($item->load('tags'));
+        } else {
+            $this->authorize('create', Item::class);
+        }
+    }
+
+    public function save(): void
+    {
+        $this->validate();
+
+        $item = $this->form->save();
+
+        $this->persistPhoto($item);
+
+        session()->flash('toast', $this->form->item !== null ? 'Changes saved' : 'Item added');
+
+        $this->redirectRoute('items.show', $item, navigate: true);
+    }
+
+    public function clearPhoto(): void
+    {
+        $this->photo = null;
+        $this->removePhoto = true;
+    }
+
+    private function persistPhoto(Item $item): void
+    {
+        $previous = $item->photo_path;
+
+        if ($this->photo !== null) {
+            $path = $this->photo->store('items/'.$item->home_id, 's3');
+
+            $item->update(['photo_path' => $path]);
+        } elseif ($this->removePhoto && $previous !== null) {
+            $item->update(['photo_path' => null]);
+        } else {
+            return;
+        }
+
+        if ($previous !== null && $previous !== $item->photo_path) {
+            Storage::disk('s3')->delete($previous);
+        }
+    }
+
+    public function toggleTag(int $tagId): void
+    {
+        $this->form->tagIds = in_array($tagId, $this->form->tagIds, true)
+            ? array_values(array_diff($this->form->tagIds, [$tagId]))
+            : [...$this->form->tagIds, $tagId];
+    }
+
+    public function pickPlace(?int $placeId): void
+    {
+        $this->form->placeId = $placeId;
+        $this->placePickerOpen = false;
+    }
+
+    public function closePlacePicker(): void
+    {
+        $this->placePickerOpen = false;
+    }
+
+    /**
+     * All categories, top-level groups first, children after their parent.
+     *
+     * @return Collection<int, Category>
+     */
+    #[Computed]
+    public function categories(): Collection
+    {
+        $all = Category::query()->orderBy('label')->get();
+
+        return $all
+            ->whereNull('parent_id')
+            ->flatMap(fn (Category $top) => [$top, ...$all->where('parent_id', $top->id)])
+            ->values();
+    }
+
+    /**
+     * @return Collection<int, Tag>
+     */
+    #[Computed]
+    public function tags(): Collection
+    {
+        return Tag::query()->orderBy('label')->get();
+    }
+
+    #[Computed]
+    public function placeIndex(): PlaceTree
+    {
+        return new PlaceTree(Place::query()->get(), new Collection);
+    }
+
+    #[Computed]
+    public function units(): UnitFormatter
+    {
+        return app(UnitFormatter::class);
+    }
+
+    public function render(): View
+    {
+        return view('livewire.items.form')->title($this->form->item !== null ? 'Edit item' : 'New item');
+    }
+}
