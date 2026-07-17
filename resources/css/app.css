@@ -1,9 +1,128 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/hanken-grotesk';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source '../../app/Livewire/**/*.php';
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+@custom-variant dark ([data-theme='dark'] &);
+
+/* ════════════════ HomeInventory design tokens ════════════════ */
+:root {
+    --stage: oklch(0.945 0.004 264);
+    --screen: oklch(0.987 0.003 264);
+    --surface: #ffffff;
+    --surface-2: oklch(0.975 0.004 264);
+    --ink: oklch(0.255 0.014 270);
+    --ink-2: oklch(0.52 0.014 268);
+    --ink-3: oklch(0.68 0.012 266);
+    --ink-4: oklch(0.8 0.008 266);
+    --line: oklch(0.925 0.005 268);
+    --line-2: oklch(0.885 0.006 268);
+    --fill: oklch(0.96 0.005 268);
+    --fill-2: oklch(0.935 0.006 268);
+
+    --accent: oklch(0.55 0.165 264);
+    --accent-press: oklch(0.48 0.165 264);
+    --accent-soft: oklch(0.955 0.03 264);
+    --accent-ink: oklch(0.45 0.17 264);
+    --on-accent: #ffffff;
+
+    --warn: oklch(0.66 0.13 64);
+    --warn-soft: oklch(0.955 0.045 76);
+    --bad: oklch(0.58 0.18 24);
+    --bad-soft: oklch(0.955 0.035 28);
+    --good: oklch(0.6 0.115 158);
+    --good-soft: oklch(0.955 0.035 160);
+
+    --sh-sm: 0 1px 2px rgba(17, 20, 28, 0.05), 0 1px 1px rgba(17, 20, 28, 0.04);
+    --sh: 0 1px 2px rgba(17, 20, 28, 0.05), 0 8px 24px -10px rgba(17, 20, 28, 0.14);
+    --sh-lg: 0 2px 6px rgba(17, 20, 28, 0.06), 0 24px 50px -16px rgba(17, 20, 28, 0.26);
+    --sh-up: 0 -8px 36px -14px rgba(17, 20, 28, 0.22);
+}
+
+[data-theme='dark'] {
+    --stage: oklch(0.13 0.006 270);
+    --screen: oklch(0.185 0.008 270);
+    --surface: oklch(0.225 0.009 270);
+    --surface-2: oklch(0.205 0.008 270);
+    --ink: oklch(0.955 0.004 268);
+    --ink-2: oklch(0.72 0.012 268);
+    --ink-3: oklch(0.56 0.012 268);
+    --ink-4: oklch(0.44 0.01 268);
+    --line: oklch(0.3 0.009 270);
+    --line-2: oklch(0.345 0.01 270);
+    --fill: oklch(0.265 0.009 270);
+    --fill-2: oklch(0.3 0.01 270);
+
+    --accent: oklch(0.7 0.145 264);
+    --accent-press: oklch(0.63 0.145 264);
+    --accent-soft: oklch(0.3 0.06 264);
+    --accent-ink: oklch(0.78 0.13 264);
+    --on-accent: oklch(0.16 0.02 264);
+
+    --warn: oklch(0.78 0.12 72);
+    --warn-soft: oklch(0.32 0.05 70);
+    --bad: oklch(0.7 0.15 26);
+    --bad-soft: oklch(0.31 0.06 26);
+    --good: oklch(0.72 0.11 160);
+    --good-soft: oklch(0.3 0.05 160);
+
+    --sh-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --sh: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 30px -12px rgba(0, 0, 0, 0.6);
+    --sh-lg: 0 24px 60px -16px rgba(0, 0, 0, 0.7);
+    --sh-up: 0 -10px 40px -14px rgba(0, 0, 0, 0.55);
+}
+
+@theme inline {
+    --font-sans: 'Hanken Grotesk Variable', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-stage: var(--stage);
+    --color-screen: var(--screen);
+    --color-surface: var(--surface);
+    --color-surface-2: var(--surface-2);
+    --color-ink: var(--ink);
+    --color-ink-2: var(--ink-2);
+    --color-ink-3: var(--ink-3);
+    --color-ink-4: var(--ink-4);
+    --color-line: var(--line);
+    --color-line-2: var(--line-2);
+    --color-fill: var(--fill);
+    --color-fill-2: var(--fill-2);
+
+    --color-accent: var(--accent);
+    --color-accent-press: var(--accent-press);
+    --color-accent-soft: var(--accent-soft);
+    --color-accent-ink: var(--accent-ink);
+    --color-on-accent: var(--on-accent);
+
+    --color-warn: var(--warn);
+    --color-warn-soft: var(--warn-soft);
+    --color-bad: var(--bad);
+    --color-bad-soft: var(--bad-soft);
+    --color-good: var(--good);
+    --color-good-soft: var(--good-soft);
+
+    --radius-card: 20px;
+    --radius-card-desk: 14px;
+    --radius-btn: 14px;
+    --radius-img: 14px;
+
+    --shadow-sm: var(--sh-sm);
+    --shadow-md: var(--sh);
+    --shadow-lg: var(--sh-lg);
+    --shadow-up: var(--sh-up);
+}
+
+@layer base {
+    body {
+        @apply bg-screen font-sans text-ink antialiased;
+        text-rendering: optimizeLegibility;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
 }
