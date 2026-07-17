@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Home;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -15,11 +16,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $user = User::factory()->create([
+            'name' => 'Diego Calle',
+            'email' => 'dnetix@gmail.com',
         ]);
+
+        $home = Home::create(['name' => "Diego's Home"]);
+        $home->users()->attach($user, ['role' => 'owner']);
+        $user->update(['current_home_id' => $home->id]);
+
+        $this->call(DemoSeeder::class);
     }
 }
