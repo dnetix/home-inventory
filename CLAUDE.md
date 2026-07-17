@@ -1,35 +1,60 @@
 <application-guidelines>
 # HomeInventory APP
-This is the folder where all the HomeInventory project related things should be
 
-## Application Description
+HomeInventory is a responsive (mobile-first + desktop) web app for managing everything a person owns: what you have, where it lives, what it's worth/sized, who borrowed it, and when it needs maintenance.
 
-HomeInventory is a clean web application for managing everything a person owns:
-- what you have
-- where it lives
-- what it's worth
-- what is sized
-- who borrowed it
-- when it needs maintenance
+## Current status (2026-07-17)
 
-It runs in the browser and is used on mobile devices and desktop computers so it's a responsive web app.
+**The app is fully built and working.** All four planned phases are complete and committed (see `git log` — one commit per phase area): schema/domain/auth, items+places+categories+tags+search, lending+upkeep+dashboard, settings+account+MinIO photos. **114 tests passing** (`php artisan test`). The user is now testing the app; upcoming work will be modifications and new features, not greenfield building.
 
-## Main functionalities
+Not built yet (deliberate): home-sharing/invite UI (schema supports it), reminder *delivery* (the settings toggle only persists), photo thumbnails in list views (lists show category glyphs; detail shows the photo), registration/password-reset (login only, seeded user), server-side photo resizing (no GD in the container).
 
-### Catalog items
-Name, photo, category, location, quantity, optional value, tags, physical dimensions.
-### Organize
-Hierarchical places (rooms → shelves → bins, any depth), nested categories, color tags.
-### Find
-Live search answering "where is my X?" with a location breadcrumb.
-### Volume / fit
-Items & locations carry W×H×D; the app answers "will this fit here?" and "how full is this location?".
-### Lending
-Track who borrowed what, due dates, mark returned.
-### Upkeep
-Maintenance + expiry calendar, recurring tasks, reminders, completion log.
-### Settings/account
-Measurement units (metric/imperial), theme, sign in / sign out.
+## Design source of truth
+
+The UI comes from Claude Design project `d03c2bb7-decf-440c-89ca-90c9ceae834a` (readable via the claude_design MCP / DesignSync; auth with /design-login). `CONTEXT.md` there is the master spec; `proto-*.jsx` files are the mobile screens, `desktop-*.jsx` the ≥1024px layouts, `proto-theme.css` the design tokens. **The design is visual reference only — its React code and REST API contract are NOT binding.** The Tailwind theme in `resources/css/app.css` is the tokens translated to CSS variables + `@theme inline`.
+
+## Architecture decisions (do not re-litigate)
+
+- **Stack:** Laravel 13 + PHP 8.4 + Octane/FrankenPHP · Livewire 4 **class components** (`app/Livewire`, views in `resources/views/livewire`) + Alpine · Tailwind 4 · MySQL 8.4 · MinIO for photos.
+- **Multi-home tenancy:** every inventory table has `home_id`. Users ↔ homes via `home_user` pivot (role column, unused yet); `users.current_home_id` is the active home. `BelongsToHome` trait (app/Models/Concerns) applies a global scope + auto-fills `home_id`; it resolves via the **scoped** `CurrentHome` binding (Octane-safe) and **throws `MissingCurrentHomeException` when no home is resolvable** — console/jobs/seeders must use `CurrentHome::override()` or `Model::forHome($home)`. `HomeScopedPolicy` double-checks membership for all scoped models.
+- **Units:** dimensions stored as **integer millimetres** (`width/height/depth` columns, exposed as a `Dimensions` VO via `DimensionsCast`); money as **integer cents** (`Money` VO/cast). Display units are per-user (`users.unit`: metric→cm, imperial→in) via `UnitFormatter` (scoped binding); forms convert input back to mm/cents on save. **Never store display units.**
+- **Domain math** lives in `app/Support` as pure classes: `FitChecker` (rotation-tolerant bounding box + remaining volume → fit/tight/full/toobig/unknown), `PlaceTree`/`PlaceFill` (whole-tree fill computed in memory from two queries — never per-node queries), `SearchItems` (FULLTEXT boolean mode + LIKE fallback; matches name/note/tags/categories/places incl. place descendants; relevance-ranked).
+- **Livewire conventions:** Form objects in `app/Livewire/Forms` for validation; multi-model mutations as action classes in `app/Actions` (e.g. `CompleteUpkeepTask` rolls recurring due dates forward from the completion date and logs the upkeeper); sheets/modals are server-driven (`@if` + `x-ui.sheet`); toasts via `$this->dispatch('toast', message: ...)` or `session()->flash('toast', ...)` for redirects.
+- **Responsive:** one blade per screen; `lg:` breakpoint splits mobile (bottom tabbar + FAB, pushed detail pages) from desktop (76px icon rail, master–detail panes). Layout: `resources/views/components/layouts/app.blade.php` (also Livewire's `component_layout` in config/livewire.php).
+- **Theme:** `[data-theme]` on `<html>`, set pre-paint from `localStorage['hi-theme']` (script in `layouts/head.blade.php`), re-applied on `livewire:navigated`, synced from Settings via the `theme-changed` event (resources/js/app.js).
+
+## Dev environment (THIS MACHINE HAS NO LOCAL PHP/COMPOSER)
+
+Everything PHP runs through Docker. App container: service `home-inventory`, name `inventory-app` (`docker compose up -d` first).
+
+- Artisan/tests/tinker: `docker compose exec home-inventory php artisan …`
+- Tests: `docker compose exec home-inventory php artisan test --compact [--filter=…]`
+- Pint (run after PHP changes): `docker compose exec home-inventory ./vendor/bin/pint --dirty --format agent`
+- Composer: `docker run --rm -v ${PWD}:/app composer:2 <cmd>`
+- Frontend: host has node — `npm run build` (ALWAYS rebuild after adding Tailwind classes in views, before browser-checking)
+
+Shared dev infra (separate compose at `D:\Works\www\developer_infraestructure\shared\compose.yml`, network `shared`):
+- **MySQL 8.4** host `db`, root/root — databases `home_inventory` + `home_inventory_test` (phpunit.xml points tests at the test DB; tests run on real MySQL for FULLTEXT parity)
+- **MinIO** bucket `home-inventory`, minioadmin/minioadmin, API `http://s3.test`, console `http://minio.test` — this repo's docker-compose maps `s3.test → host-gateway` so presigned URLs work from container AND browser; the Windows hosts file has `127.0.0.1 s3.test minio.test inventory.test` entries
+- **Traefik** serves the app at `http://inventory.test`; DbGate at `http://db-admin.test`; Redis at host `redis` (unused so far)
+
+Login: `dnetix@gmail.com` / `password` (seeded via `php artisan migrate:fresh --seed` — DemoSeeder recreates the design prototype's dataset with relative dates). The user has real usage data now — **ask before running migrate:fresh.**
+
+## Known gotchas
+
+- Octane runs `--max-requests=1`: after code changes the FIRST request may serve stale code — reload twice when verifying in a browser.
+- Livewire 4's layout config key is `component_layout` (NOT v3's `layout`); its default `layouts::app` hint doesn't exist here.
+- The app container has no GD: in tests fake images with `UploadedFile::fake()->create('x.jpg', 128, 'image/jpeg')`, never `->image()`.
+- `User` mirrors DB defaults in `$attributes` (unit/theme/notifications) — keep that in sync if columns are added; Livewire tests use in-memory models that never see DB defaults.
+- Artisan-generated files must be Read before Write/Edit when using file tools.
+- Item photos: `Item::booted()` deletes the S3 object on item delete; the Items\Form component deletes the old object on replace/remove. Bucket is private; display uses 30-min `temporaryUrl`s.
+
+## Working agreements with the user
+
+- Follow the phased/decision history in `git log` and the memory directory; don't re-ask settled decisions.
+- No new composer/npm dependencies without asking.
+- PHPUnit only (never Pest); factories with states; feature tests per module including a cross-home isolation case.
+- Keep both layouts (mobile + desktop) in mind for every screen change; compare against the design project when fidelity matters.
 </application-guidelines>
 
 <laravel-boost-guidelines>
