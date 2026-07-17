@@ -22,7 +22,8 @@
         {{-- Photo + name --}}
         <div class="mb-[18px] flex gap-3.5">
             <div class="relative shrink-0" x-data>
-                <input type="file" accept="image/*" wire:model="photo" x-ref="file" class="hidden">
+                <input type="file" accept="image/*" x-ref="file" class="hidden"
+                    x-on:change="$event.target.files[0] && window.shrinkPhoto($event.target.files[0]).then((file) => { $wire.upload('photo', file); $refs.file.value = '' })">
                 <button type="button" x-on:click="$refs.file.click()"
                     class="relative block size-[84px] cursor-pointer overflow-hidden rounded-2xl">
                     @if ($photo?->isPreviewable())

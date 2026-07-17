@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Item;
 use App\Models\Place;
 use App\Models\Tag;
+use App\Support\PhotoShrinker;
 use App\Support\PlaceTree;
 use App\Support\UnitFormatter;
 use Illuminate\Contracts\View\View;
@@ -66,7 +67,14 @@ class Form extends Component
         $previous = $item->photo_path;
 
         if ($this->photo !== null) {
-            $path = $this->photo->store('items/'.$item->home_id, 's3');
+            $original = $this->photo->get();
+            $shrunk = (new PhotoShrinker)->shrink($original);
+            $name = $shrunk === $original
+                ? $this->photo->hashName()
+                : pathinfo($this->photo->hashName(), PATHINFO_FILENAME).'.jpg';
+
+            $path = 'items/'.$item->home_id.'/'.$name;
+            Storage::disk('s3')->put($path, $shrunk);
 
             $item->update(['photo_path' => $path]);
         } elseif ($this->removePhoto && $previous !== null) {
