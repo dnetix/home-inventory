@@ -5,10 +5,12 @@ namespace App\Livewire\Places;
 use App\Livewire\Forms\PlaceForm;
 use App\Models\Item;
 use App\Models\Place;
+use App\Support\PlaceFill;
 use App\Support\PlaceTree;
 use App\Support\UnitFormatter;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -88,6 +90,31 @@ class Index extends Component
         return [
             'places' => Place::query()->count(),
             'items' => Item::query()->count(),
+        ];
+    }
+
+    /**
+     * Desktop rail: room/unplaced counts, whole-home storage, fullest places.
+     *
+     * @return array{rooms: int, unplaced: int, storage: PlaceFill, fullest: Collection<int, array{place: Place, fill: PlaceFill}>}
+     */
+    #[Computed]
+    public function summary(): array
+    {
+        $tree = $this->tree;
+
+        $fullest = $tree->flatten()
+            ->map(fn (array $entry) => ['place' => $entry['place'], 'fill' => $tree->fill($entry['place']->id)])
+            ->filter(fn (array $row) => $row['fill']->percent() !== null && $row['fill']->usedLitres > 0)
+            ->sortByDesc(fn (array $row) => $row['fill']->usedLitres / $row['fill']->capacityLitres)
+            ->take(3)
+            ->values();
+
+        return [
+            'rooms' => $tree->roots()->count(),
+            'unplaced' => Item::query()->whereNull('place_id')->count(),
+            'storage' => $tree->totalStorage(),
+            'fullest' => $fullest,
         ];
     }
 

@@ -127,6 +127,58 @@ final class PlaceTree
     }
 
     /**
+     * Whole-home storage as one aggregate fill: capacities are summed over
+     * the topmost measured places only — a measured shelf inside a measured
+     * garage is already part of the garage's interior, so counting both
+     * would inflate the total.
+     */
+    public function totalStorage(): PlaceFill
+    {
+        $capacity = null;
+        $used = 0.0;
+        $measured = 0;
+        $total = 0;
+
+        foreach ($this->topmostMeasuredIds() as $id) {
+            $fill = $this->fill($id);
+            $capacity = ($capacity ?? 0.0) + $fill->capacityLitres;
+            $used += $fill->usedLitres;
+            $measured += $fill->measuredCount;
+            $total += $fill->totalCount;
+        }
+
+        return new PlaceFill($capacity, $used, $measured, $total);
+    }
+
+    /**
+     * Places that have a capacity set and no measured ancestor.
+     *
+     * @return list<int>
+     */
+    public function topmostMeasuredIds(): array
+    {
+        $out = [];
+
+        $walk = function (Place $place) use (&$walk, &$out): void {
+            if ($place->capacityLitres() !== null) {
+                $out[] = $place->id;
+
+                return;
+            }
+
+            foreach ($this->childrenOf($place->id) as $child) {
+                $walk($child);
+            }
+        };
+
+        foreach ($this->roots() as $root) {
+            $walk($root);
+        }
+
+        return $out;
+    }
+
+    /**
      * Every place in depth-first display order with its nesting depth —
      * for pickers and flat tree renderings.
      *

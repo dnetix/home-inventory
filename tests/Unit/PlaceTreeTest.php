@@ -104,6 +104,45 @@ class PlaceTreeTest extends TestCase
         $this->assertSame(['Garage', 'Shelf B'], $this->tree()->breadcrumb(2));
     }
 
+    public function test_total_storage_does_not_double_count_measured_places_inside_measured_places(): void
+    {
+        $storage = $this->tree()->totalStorage();
+
+        // Garage (126,000 L) already contains Shelf B — only the garage counts.
+        $this->assertSame([1], $this->tree()->topmostMeasuredIds());
+        $this->assertSame(126000.0, $storage->capacityLitres);
+        $this->assertEqualsWithDelta(35.31, $storage->usedLitres, 0.001);
+        $this->assertSame(3, $storage->totalCount);
+    }
+
+    public function test_total_storage_finds_measured_places_under_unmeasured_parents(): void
+    {
+        $tree = new PlaceTree(
+            new Collection([
+                $this->place(1, 'Office', null, null),
+                $this->place(2, 'Drawer 1', 1, [400, 300, 150]),
+            ]),
+            new Collection([$this->item('Passport', 2, [130, 90, 10])]),
+        );
+
+        $storage = $tree->totalStorage();
+
+        $this->assertSame([2], $tree->topmostMeasuredIds());
+        $this->assertSame(18.0, $storage->capacityLitres);
+        $this->assertEqualsWithDelta(0.117, $storage->usedLitres, 0.001);
+    }
+
+    public function test_total_storage_is_null_capacity_when_nothing_is_measured(): void
+    {
+        $tree = new PlaceTree(
+            new Collection([$this->place(1, 'Office', null, null)]),
+            new Collection,
+        );
+
+        $this->assertNull($tree->totalStorage()->capacityLitres);
+        $this->assertNull($tree->totalStorage()->percent());
+    }
+
     /**
      * @param  array{0: int, 1: int, 2: int}|null  $dim
      */
