@@ -62,9 +62,14 @@ class ItemsTest extends TestCase
         Item::factory()->for($this->home)->create(['name' => 'Passport']);
 
         Livewire::test(Index::class)
-            ->set('cat', (string) $tools->id)
+            ->set('cat', $tools->id)
             ->assertSee('Cordless drill')
-            ->assertDontSee('Passport');
+            ->assertDontSee('Passport')
+            ->set('cat', $power->id)
+            ->assertSee('Cordless drill')
+            ->assertDontSee('Passport')
+            ->set('cat', null)
+            ->assertSee('Passport');
     }
 
     public function test_index_missing_data_filter(): void

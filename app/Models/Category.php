@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 #[Fillable(['label', 'glyph', 'color', 'parent_id'])]
 class Category extends Model
@@ -30,6 +31,22 @@ class Category extends Model
     public function items(): HasMany
     {
         return $this->hasMany(Item::class);
+    }
+
+    /**
+     * All categories in picker order: top-level groups alphabetical, each
+     * followed by its children.
+     *
+     * @return Collection<int, self>
+     */
+    public static function pickerOrdered(): Collection
+    {
+        $all = static::query()->orderBy('label')->get();
+
+        return $all
+            ->whereNull('parent_id')
+            ->flatMap(fn (self $top) => [$top, ...$all->where('parent_id', $top->id)])
+            ->values();
     }
 
     /**

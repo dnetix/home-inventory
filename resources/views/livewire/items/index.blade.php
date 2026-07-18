@@ -39,15 +39,9 @@
         </div>
     @endteleport
 
-    {{-- Category chips --}}
-    <div class="flex gap-2 overflow-x-auto px-5 py-3 lg:px-[30px]" style="scrollbar-width: none">
-        <x-ui.chip :on="$cat === 'all'" :outline="$cat !== 'all'" wire:click="$set('cat', 'all')">All</x-ui.chip>
-        @foreach ($this->categories as $category)
-            <x-ui.chip :on="$cat === (string) $category->id" :outline="$cat !== (string) $category->id"
-                :dot="$category->color" wire:click="$set('cat', '{{ $category->id }}')">
-                {{ $category->label }}
-            </x-ui.chip>
-        @endforeach
+    {{-- Category filter --}}
+    <div class="px-5 py-3 lg:w-[420px] lg:px-[30px]">
+        <x-category-combobox :categories="$this->categories" property="cat" null-label="All categories" live />
     </div>
 
     {{-- Active data-quality filter banner --}}

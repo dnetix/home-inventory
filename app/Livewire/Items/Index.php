@@ -30,7 +30,7 @@ class Index extends Component
     public string $search = '';
 
     #[Url]
-    public string $cat = 'all';
+    public ?int $cat = null;
 
     #[Url]
     public string $missing = '';
@@ -102,7 +102,7 @@ class Index extends Component
     #[Computed]
     public function categories(): Collection
     {
-        return Category::query()->whereNull('parent_id')->orderBy('label')->get();
+        return Category::pickerOrdered();
     }
 
     /**
@@ -119,7 +119,7 @@ class Index extends Component
 
         $query->with('activeLend');
 
-        if ($this->cat !== 'all') {
+        if ($this->cat !== null) {
             $ids = Category::query()
                 ->whereKey($this->cat)
                 ->orWhere('parent_id', $this->cat)

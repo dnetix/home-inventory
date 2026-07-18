@@ -157,12 +157,7 @@ class Form extends Component
     #[Computed]
     public function categories(): Collection
     {
-        $all = Category::query()->orderBy('label')->get();
-
-        return $all
-            ->whereNull('parent_id')
-            ->flatMap(fn (Category $top) => [$top, ...$all->where('parent_id', $top->id)])
-            ->values();
+        return Category::pickerOrdered();
     }
 
     /**
