@@ -204,20 +204,30 @@ final class PlaceTree
     }
 
     /**
+     * Places from the root down to the place itself.
+     *
+     * @return list<Place>
+     */
+    public function breadcrumbPlaces(int $placeId): array
+    {
+        $places = [];
+        $current = $this->find($placeId);
+
+        while ($current !== null) {
+            array_unshift($places, $current);
+            $current = $current->parent_id === null ? null : $this->find($current->parent_id);
+        }
+
+        return $places;
+    }
+
+    /**
      * Labels from the root down to the place itself.
      *
      * @return list<string>
      */
     public function breadcrumb(int $placeId): array
     {
-        $labels = [];
-        $current = $this->find($placeId);
-
-        while ($current !== null) {
-            array_unshift($labels, $current->label);
-            $current = $current->parent_id === null ? null : $this->find($current->parent_id);
-        }
-
-        return $labels;
+        return array_map(fn (Place $place) => $place->label, $this->breadcrumbPlaces($placeId));
     }
 }
