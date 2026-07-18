@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 #[Fillable(['name', 'category_id', 'place_id', 'value', 'qty', 'dim', 'note', 'photo_path', 'status'])]
@@ -124,12 +125,21 @@ class Item extends Model
     }
 
     /**
-     * A short-lived presigned URL — the photo bucket stays private.
+     * A short-lived presigned URL — the photo bucket stays private. Cached
+     * shorter than its validity so re-renders keep the same URL: a fresh
+     * signature per render would make the browser re-download every photo
+     * on every Livewire update.
      */
     public function photoUrl(): ?string
     {
-        return $this->photo_path === null
-            ? null
-            : Storage::disk('s3')->temporaryUrl($this->photo_path, now()->addMinutes(30));
+        if ($this->photo_path === null) {
+            return null;
+        }
+
+        return Cache::remember(
+            'photo-url:'.$this->photo_path,
+            now()->addMinutes(20),
+            fn (): string => Storage::disk('s3')->temporaryUrl($this->photo_path, now()->addMinutes(30)),
+        );
     }
 }
