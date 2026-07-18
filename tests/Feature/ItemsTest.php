@@ -162,6 +162,42 @@ class ItemsTest extends TestCase
             ->assertSet('form.categoryId', null);
     }
 
+    public function test_form_suggests_possible_duplicates_while_typing_a_name(): void
+    {
+        $place = Place::factory()->for($this->home)->create(['label' => 'Garage']);
+        $drill = Item::factory()->for($this->home)->for($place)->create(['name' => 'Cordless drill']);
+        Item::factory()->for($this->home)->create(['name' => 'Passport']);
+
+        Livewire::test(Form::class)
+            ->set('form.name', 'drill')
+            ->assertSee('Already in your inventory?')
+            ->assertSee('Cordless drill')
+            ->assertSee(route('items.show', $drill))
+            ->assertSee('Garage')
+            ->assertDontSee('Passport');
+    }
+
+    public function test_form_duplicate_hints_are_not_shown_when_editing(): void
+    {
+        Item::factory()->for($this->home)->create(['name' => 'Cordless drill']);
+        $item = Item::factory()->for($this->home)->create(['name' => 'Hammer']);
+
+        Livewire::test(Form::class, ['item' => $item])
+            ->set('form.name', 'Cordless drill')
+            ->assertDontSee('Already in your inventory?');
+    }
+
+    public function test_form_duplicate_hints_exclude_other_homes(): void
+    {
+        $otherHome = Home::factory()->create();
+        Item::factory()->for($otherHome)->create(['name' => 'Cordless drill']);
+
+        Livewire::test(Form::class)
+            ->set('form.name', 'drill')
+            ->assertDontSee('Already in your inventory?')
+            ->assertDontSee('Cordless drill');
+    }
+
     public function test_form_requires_a_name_and_complete_dimensions(): void
     {
         Livewire::test(Form::class)

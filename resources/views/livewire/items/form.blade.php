@@ -52,6 +52,33 @@
         </div>
         @error('photo')<p class="-mt-3 mb-3 text-[13px] font-semibold text-bad">{{ $message }}</p>@enderror
 
+        {{-- Possible duplicates (create only) --}}
+        @if (! $editing && $this->possibleDuplicates->isNotEmpty())
+            <div class="-mt-2 mb-4">
+                <div class="mb-1.5 text-xs font-semibold text-ink-3">Already in your inventory?</div>
+                <div class="flex flex-col overflow-hidden rounded-[14px] border border-line">
+                    @foreach ($this->possibleDuplicates as $match)
+                        <a href="{{ route('items.show', $match) }}" wire:navigate wire:key="dup-{{ $match->id }}"
+                            class="flex items-center gap-2.5 border-b border-line bg-surface px-3 py-2 last:border-b-0 hover:bg-fill">
+                            <x-item-thumb class="size-9 rounded-lg" :item="$match" />
+                            <div class="min-w-0 flex-1">
+                                <div class="truncate text-[13.5px] font-semibold">{{ $match->name }}</div>
+                                <div class="flex items-center gap-1 truncate text-[11.5px] font-semibold text-accent">
+                                    <x-icon name="map-pin" :size="11" :stroke="2" />
+                                    @if ($match->place_id)
+                                        {{ implode(' › ', $this->placeIndex->breadcrumb($match->place_id)) }}
+                                    @else
+                                        <span class="text-ink-4">No location</span>
+                                    @endif
+                                </div>
+                            </div>
+                            <x-icon name="chevron-right" :size="15" class="shrink-0 text-ink-3" />
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         <div class="mb-4 flex items-center gap-2.5">
             <span class="text-xs font-semibold whitespace-nowrap text-ink-3">Everything below is optional</span>
             <div class="flex-1 border-t border-dashed border-line-2"></div>

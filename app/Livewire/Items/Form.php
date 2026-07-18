@@ -14,6 +14,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -117,6 +118,35 @@ class Form extends Component
     public function closePlacePicker(): void
     {
         $this->placePickerOpen = false;
+    }
+
+    /**
+     * Existing items whose names match what is being typed — shown while
+     * creating so the user can spot "I already have this one".
+     *
+     * @return Collection<int, Item>
+     */
+    #[Computed]
+    public function possibleDuplicates(): Collection
+    {
+        $words = Str::of($this->form->name)->squish()->lower()->explode(' ')->filter()->take(5);
+
+        if ($this->form->item !== null || $words->isEmpty() || mb_strlen($words->join(' ')) < 2) {
+            return new Collection;
+        }
+
+        $query = Item::query()->with('category');
+
+        foreach ($words as $word) {
+            $query->where('name', 'like', '%'.addcslashes($word, '%_\\').'%');
+        }
+
+        $first = addcslashes($words->first(), '%_\\');
+
+        return $query
+            ->orderByRaw('case when name like ? then 0 else 1 end, name', [$first.'%'])
+            ->limit(4)
+            ->get();
     }
 
     /**
