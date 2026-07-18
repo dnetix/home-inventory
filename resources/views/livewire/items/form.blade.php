@@ -68,19 +68,70 @@
                 @error('form.note')<p class="mt-1.5 text-[13px] font-semibold text-bad">{{ $message }}</p>@enderror
             </div>
 
-            {{-- Category chips --}}
+            {{-- Category (searchable — real inventories have too many for chips) --}}
+            @php
+                $categoryOptions = $this->categories->map(fn ($category) => [
+                    'id' => $category->id,
+                    'label' => $category->label,
+                    'child' => $category->parent_id !== null,
+                    'color' => $category->color,
+                    'search' => mb_strtolower(trim(
+                        ($category->parent_id ? $this->categories->firstWhere('id', $category->parent_id)?->label.' ' : '').$category->label
+                    )),
+                ])->values();
+            @endphp
             <div>
                 <div class="mb-[7px] text-[12.5px] font-bold text-ink-2">Category</div>
-                <div class="flex flex-wrap gap-2">
-                    <x-ui.chip :on="$form->categoryId === null" :outline="$form->categoryId !== null"
-                        wire:click="$set('form.categoryId', null)">Uncategorized</x-ui.chip>
-                    @foreach ($this->categories as $category)
-                        <x-ui.chip wire:key="c-{{ $category->id }}" :on="$form->categoryId === $category->id"
-                            :outline="$form->categoryId !== $category->id" :dot="$category->color"
-                            wire:click="$set('form.categoryId', {{ $category->id }})">
-                            {{ $category->parent_id ? '· ' : '' }}{{ $category->label }}
-                        </x-ui.chip>
-                    @endforeach
+                <div class="relative" x-on:click.outside="close()" x-data="{
+                        open: false,
+                        search: '',
+                        selected: $wire.entangle('form.categoryId'),
+                        options: @js($categoryOptions),
+                        get filtered() {
+                            const query = this.search.trim().toLowerCase();
+                            return query === '' ? this.options : this.options.filter((option) => option.search.includes(query));
+                        },
+                        label(id) { return this.options.find((option) => option.id === id)?.label ?? ''; },
+                        pick(id) { this.selected = id; this.close(); },
+                        close() { this.open = false; this.search = ''; },
+                    }">
+                    <div class="flex min-h-[50px] items-center gap-2.5 rounded-btn border border-line-2 bg-surface px-3.5 transition focus-within:border-accent focus-within:ring-[3.5px] focus-within:ring-accent-soft">
+                        <x-icon name="search" :size="19" class="shrink-0 text-ink-3" />
+                        <input type="text" placeholder="Uncategorized" autocomplete="off"
+                            class="w-full bg-transparent py-[13px] text-[15.5px] font-medium text-ink outline-none placeholder:text-ink-3"
+                            :value="open ? search : label(selected)"
+                            x-on:input="search = $event.target.value; open = true"
+                            x-on:focus="open = true; search = ''"
+                            x-on:keydown.escape.prevent="close(); $event.target.blur()"
+                            x-on:keydown.enter.prevent="search.trim() ? pick(filtered[0]?.id ?? null) : close()"
+                            x-on:keydown.tab="close()">
+                        <button type="button" x-show="selected !== null" x-cloak x-on:click="pick(null)"
+                            class="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-3 hover:text-ink-2">
+                            <x-icon name="x" :size="15" :stroke="2.2" />
+                        </button>
+                        <x-icon name="chevron-down" :size="16" class="shrink-0 text-ink-3" x-show="selected === null" />
+                    </div>
+                    <div x-show="open" x-cloak
+                        class="absolute inset-x-0 top-full z-20 mt-1.5 max-h-[280px] overflow-y-auto rounded-[14px] border border-line bg-surface shadow-lg">
+                        <button type="button" x-on:click="pick(null)" x-show="!search.trim()"
+                            class="flex w-full cursor-pointer items-center gap-2.5 border-b border-line px-3.5 py-2.5 text-left hover:bg-fill"
+                            :class="selected === null && 'bg-accent-soft'">
+                            <span class="flex-1 text-[14px] font-semibold" :class="selected === null ? 'text-accent-ink' : 'text-ink-3'">Uncategorized</span>
+                        </button>
+                        <template x-for="option in filtered" :key="option.id">
+                            <button type="button" x-on:click="pick(option.id)"
+                                class="flex w-full cursor-pointer items-center gap-2.5 border-b border-line px-3.5 py-2.5 text-left last:border-0 hover:bg-fill"
+                                :class="selected === option.id && 'bg-accent-soft'">
+                                <span class="size-2 shrink-0 rounded-full" :class="option.child && 'ml-3'"
+                                    :style="`background: ${option.color ?? 'var(--line-2)'}`"></span>
+                                <span class="flex-1 truncate text-[14px] font-semibold" :class="selected === option.id && 'text-accent-ink'"
+                                    x-text="option.label"></span>
+                            </button>
+                        </template>
+                        <div x-show="!filtered.length" class="px-3.5 py-3 text-[13.5px] font-medium text-ink-3">
+                            No matching category
+                        </div>
+                    </div>
                 </div>
                 @error('form.categoryId')<p class="mt-1.5 text-[13px] font-semibold text-bad">{{ $message }}</p>@enderror
             </div>

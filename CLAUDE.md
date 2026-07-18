@@ -32,7 +32,7 @@ Everything PHP runs through Docker. App container: service `home-inventory`, nam
 - Pint (run after PHP changes): `docker compose exec home-inventory ./vendor/bin/pint --dirty --format agent`
 - Composer: `docker run --rm -v ${PWD}:/app composer:2 <cmd>`
 - Frontend: host has node — `npm run build` (ALWAYS rebuild after adding Tailwind classes in views, before browser-checking)
-- **After editing PHP files, run `docker compose exec home-inventory php artisan octane:reload`** — Octane runs 4 persistent workers (`--max-requests=500`), so PHP changes are NOT picked up until reload. Blade/view edits need no reload.
+- **After ANY change (PHP, Blade, or `npm run build`), run `docker compose exec home-inventory php artisan octane:reload`** — Octane runs 4 persistent workers (`--max-requests=500`). PHP is cached until reload; Blade/asset changes are too in practice (Laravel's Vite helper caches the manifest in a worker static, and the 9p attribute cache makes compiled-view mtime checks unreliable). If a view still renders stale after reload, `php artisan view:clear` then reload.
 - Perf-test mode: `docker compose exec home-inventory composer perf` (runs `artisan optimize` + octane:reload — production-like caches); back to dev with `composer perf:off`. **While perf mode is on, NEVER run `php artisan test` directly** — cached config overrides phpunit.xml's test DB and `RefreshDatabase` would hit the real `home_inventory` data. Use `composer test` (prefixed with config:clear) or run `perf:off` first; check `bootstrap/cache/config.php` doesn't exist before testing.
 
 Shared dev infra (separate compose at `D:\Works\www\developer_infraestructure\shared\compose.yml`, network `shared`):
@@ -44,7 +44,7 @@ Login: `dnetix@gmail.com` / `password` (seeded via `php artisan migrate:fresh --
 
 ## Known gotchas
 
-- Octane workers persist (`--workers=4 --max-requests=500`): run `php artisan octane:reload` after PHP changes or the browser serves stale code. The code sits on a slow 9p Windows bind mount — that's why worker persistence + the OPcache tuning in the Dockerfile matter (see the perf-fix commits).
+- Octane workers persist (`--workers=4 --max-requests=500`): run `php artisan octane:reload` after ANY change (PHP, Blade, asset rebuilds) or the browser serves stale code/asset hashes. The code sits on a slow 9p Windows bind mount — that's why worker persistence + the OPcache tuning in the Dockerfile matter (see the perf-fix commits).
 - Livewire 4's layout config key is `component_layout` (NOT v3's `layout`); its default `layouts::app` hint doesn't exist here.
 - Tests still fake images with `UploadedFile::fake()->create('x.jpg', 128, 'image/jpeg')` (works regardless of GD; the container now HAS gd+exif for `PhotoShrinker`).
 - `User` mirrors DB defaults in `$attributes` (unit/theme/notifications) — keep that in sync if columns are added; Livewire tests use in-memory models that never see DB defaults.
