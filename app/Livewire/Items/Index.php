@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Items;
 
+use App\Enums\ItemStatus;
 use App\Livewire\Concerns\ManagesItemActions;
 use App\Models\Category;
 use App\Models\Item;
@@ -36,6 +37,9 @@ class Index extends Component
     public string $missing = '';
 
     #[Url]
+    public string $status = '';
+
+    #[Url]
     public ?int $selected = null;
 
     #[Session('items.view')]
@@ -58,9 +62,19 @@ class Index extends Component
         'value' => ['label' => 'Unpriced', 'empty' => 'Every item has a value recorded.'],
     ];
 
+    /**
+     * Status-filter options: url value => label.
+     */
+    public const array STATUS_FILTERS = [
+        'lent' => 'Lent',
+        'missing' => 'Missing',
+        'broken' => 'Broken',
+        'removed' => 'Removed',
+    ];
+
     public function updated(string $property): void
     {
-        if (in_array($property, ['search', 'cat', 'missing'], true)) {
+        if (in_array($property, ['search', 'cat', 'missing', 'status'], true)) {
             $this->resetPage();
         }
     }
@@ -88,6 +102,20 @@ class Index extends Component
     {
         $this->missing = array_key_exists($missing, self::MISSING_META) ? $missing : '';
         $this->filterOpen = false;
+        $this->resetPage();
+    }
+
+    public function setStatusFilter(string $status): void
+    {
+        $this->status = array_key_exists($status, self::STATUS_FILTERS) ? $status : '';
+        $this->filterOpen = false;
+        $this->resetPage();
+    }
+
+    public function clearFilters(): void
+    {
+        $this->missing = '';
+        $this->status = '';
         $this->resetPage();
     }
 
@@ -135,6 +163,14 @@ class Index extends Component
             default => null,
         };
 
+        match ($this->status) {
+            'lent' => $query->whereHas('activeLend'),
+            'missing' => $query->where('status', ItemStatus::Missing),
+            'broken' => $query->where('status', ItemStatus::Broken),
+            'removed' => $query->withRemoved()->where('status', ItemStatus::Removed),
+            default => null,
+        };
+
         if (! $searching || $this->sort !== 'name' || $this->dir !== 'asc') {
             $this->applySort($query);
         }
@@ -147,7 +183,7 @@ class Index extends Component
     {
         return $this->selected === null
             ? null
-            : Item::query()->with(['category.parent', 'place', 'tags', 'activeLend'])->find($this->selected);
+            : Item::withRemoved()->with(['category.parent', 'place', 'tags', 'activeLend'])->find($this->selected);
     }
 
     /**
@@ -197,6 +233,7 @@ class Index extends Component
             'value' => $query->orderBy('value', $this->dir),
             'status' => $query
                 ->withCount(['lends as active_lends_count' => fn (Builder $q) => $q->whereNull('returned_at')])
+                ->orderBy('status', $this->dir)
                 ->orderBy('active_lends_count', $this->dir),
             default => $query->orderBy('name', $this->dir),
         };

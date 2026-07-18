@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Enums\ItemStatus;
 use App\Models\Concerns\BelongsToHome;
 use App\Support\Dimensions;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Storage;
 
-#[Fillable(['name', 'category_id', 'place_id', 'value', 'qty', 'dim', 'note', 'photo_path'])]
+#[Fillable(['name', 'category_id', 'place_id', 'value', 'qty', 'dim', 'note', 'photo_path', 'status'])]
 class Item extends Model
 {
     use BelongsToHome;
@@ -24,6 +26,12 @@ class Item extends Model
 
     protected static function booted(): void
     {
+        // Removed items behave like soft-deleted ones: excluded from every
+        // list, search, stat and picker unless a query opts in via withRemoved().
+        static::addGlobalScope('notRemoved', function (Builder $query): void {
+            $query->where('status', '!=', ItemStatus::Removed);
+        });
+
         static::deleting(function (Item $item): void {
             if ($item->photo_path !== null) {
                 Storage::disk('s3')->delete($item->photo_path);
@@ -36,6 +44,7 @@ class Item extends Model
      */
     protected $attributes = [
         'qty' => 1,
+        'status' => 'in_place',
     ];
 
     /**
@@ -49,7 +58,31 @@ class Item extends Model
             'dim' => Dimensions::class,
             'value' => Money::class,
             'qty' => 'integer',
+            'status' => ItemStatus::class,
         ];
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeWithRemoved(Builder $query): Builder
+    {
+        return $query->withoutGlobalScope('notRemoved');
+    }
+
+    /**
+     * Detail and edit pages must keep working for removed items — that is the
+     * path to restoring them.
+     *
+     * @param  Builder<self>  $query
+     * @param  mixed  $value
+     * @param  string|null  $field
+     * @return Builder<self>
+     */
+    public function resolveRouteBindingQuery($query, $value, $field = null)
+    {
+        return parent::resolveRouteBindingQuery($query->withoutGlobalScope('notRemoved'), $value, $field);
     }
 
     public function category(): BelongsTo

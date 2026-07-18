@@ -38,9 +38,12 @@ class UpkeepTask extends Model
         ];
     }
 
+    /**
+     * Includes removed items — existing tasks must keep naming them.
+     */
     public function item(): BelongsTo
     {
-        return $this->belongsTo(Item::class);
+        return $this->belongsTo(Item::class)->withoutGlobalScope('notRemoved');
     }
 
     public function logs(): HasMany

@@ -32,9 +32,12 @@ class Lend extends Model
         ];
     }
 
+    /**
+     * Includes removed items — lend history must keep naming them.
+     */
     public function item(): BelongsTo
     {
-        return $this->belongsTo(Item::class);
+        return $this->belongsTo(Item::class)->withoutGlobalScope('notRemoved');
     }
 
     public function scopeActive(Builder $query): Builder

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ItemStatus;
 use App\Livewire\Items\Form;
 use App\Livewire\Items\Index;
 use App\Livewire\Items\Show;
@@ -12,6 +13,7 @@ use App\Models\Lend;
 use App\Models\Place;
 use App\Models\Tag;
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -262,6 +264,62 @@ class ItemsTest extends TestCase
             ->call('returnLend', $lend->id);
 
         $this->assertNotNull($lend->fresh()->returned_at);
+    }
+
+    public function test_item_status_can_be_changed_and_shows_a_pill(): void
+    {
+        $item = Item::factory()->for($this->home)->create(['name' => 'Garden hose']);
+
+        Livewire::test(Show::class, ['item' => $item])
+            ->call('setStatus', $item->id, 'missing');
+
+        $this->assertSame(ItemStatus::Missing, $item->fresh()->status);
+
+        Livewire::test(Index::class)->assertSee('missing');
+    }
+
+    public function test_index_filters_by_status(): void
+    {
+        Item::factory()->for($this->home)->missing()->create(['name' => 'Lost keys']);
+        Item::factory()->for($this->home)->create(['name' => 'Passport']);
+
+        Livewire::test(Index::class)
+            ->call('setStatusFilter', 'missing')
+            ->assertSee('Lost keys')
+            ->assertDontSee('Passport');
+    }
+
+    public function test_removed_items_act_like_soft_deleted_until_restored(): void
+    {
+        $removed = Item::factory()->for($this->home)->removed()->create(['name' => 'Old toaster']);
+
+        Livewire::test(Index::class)
+            ->assertDontSee('Old toaster')
+            ->set('search', 'toaster')
+            ->assertDontSee('Old toaster');
+
+        Livewire::test(Index::class)
+            ->call('setStatusFilter', 'removed')
+            ->assertSee('Old toaster');
+
+        $this->get(route('items.show', $removed))
+            ->assertOk()
+            ->assertSee('Removed from inventory');
+
+        Livewire::test(Show::class, ['item' => $removed])
+            ->call('setStatus', $removed->id, 'in_place');
+
+        $this->assertSame(ItemStatus::InPlace, $removed->fresh()->status);
+    }
+
+    public function test_status_cannot_be_changed_for_another_homes_item(): void
+    {
+        $otherHome = Home::factory()->create();
+        $foreign = Item::factory()->for($otherHome)->create();
+
+        $this->expectException(ModelNotFoundException::class);
+
+        Livewire::test(Index::class)->call('setStatus', $foreign->id, 'missing');
     }
 
     public function test_items_from_another_home_are_not_accessible(): void

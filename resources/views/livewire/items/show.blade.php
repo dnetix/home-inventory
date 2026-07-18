@@ -40,6 +40,15 @@
                     </div>
                 @endif
 
+                <button type="button" wire:click="$set('menuOpen', false); startStatus({{ $item->id }})"
+                    class="flex w-full cursor-pointer items-center gap-3.5 border-b border-line py-[13px] text-left">
+                    <x-icon name="check-circle" :size="20" class="text-ink-2" />
+                    <div class="flex-1">
+                        <div class="text-[15px] font-semibold">Change status</div>
+                        <div class="text-[12.5px] font-medium text-ink-3">{{ $item->status->label() }} now</div>
+                    </div>
+                </button>
+
                 <a href="{{ route('items.edit', $item) }}" wire:navigate
                     class="flex items-center gap-3.5 border-b border-line py-[13px]">
                     <x-icon name="edit" :size="20" class="text-ink-2" />
@@ -59,5 +68,10 @@
     {{-- Transfer sheet --}}
     @if ($this->transferItem)
         @include('livewire.items.partials.transfer-sheet')
+    @endif
+
+    {{-- Status sheet --}}
+    @if ($this->statusItem)
+        @include('livewire.items.partials.status-sheet')
     @endif
 </div>

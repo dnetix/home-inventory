@@ -45,6 +45,18 @@
         </div>
     @endif
 
+    @if ($item->status === \App\Enums\ItemStatus::Removed)
+        <div class="mt-4 flex items-center gap-3 rounded-[14px] bg-fill px-3.5 py-3 text-ink-2">
+            <x-icon name="trash" :size="20" :stroke="1.9" />
+            <div class="flex-1">
+                <div class="text-[13.5px] font-bold">Removed from inventory</div>
+                <div class="mt-px text-[12px] font-semibold opacity-80">Not counted in lists or stats</div>
+            </div>
+            <button type="button" class="cursor-pointer text-[13.5px] font-bold underline"
+                wire:click="setStatus({{ $item->id }}, 'in_place')">Restore</button>
+        </div>
+    @endif
+
     @if ($lend)
         <div @class([
             'mt-4 flex items-center gap-3 rounded-[14px] px-3.5 py-3',
@@ -68,6 +80,21 @@
     @endif
 
     <x-ui.card flat class="mt-4 divide-y divide-line px-4">
+        <button type="button" wire:click="startStatus({{ $item->id }})"
+            class="flex w-full cursor-pointer items-center gap-3 py-[13px] text-left">
+            <x-icon name="check-circle" :size="18" class="shrink-0 text-ink-3" />
+            <span class="w-[82px] shrink-0 text-[13.5px] font-semibold text-ink-2">Status</span>
+            <span class="flex flex-1 items-center justify-end gap-1.5 text-right text-[13.5px] font-semibold">
+                @if ($item->status->pillVariant())
+                    <x-ui.pill :variant="$item->status->pillVariant()">{{ strtolower($item->status->label()) }}</x-ui.pill>
+                @elseif ($lend)
+                    <x-ui.pill variant="bad">lent</x-ui.pill>
+                @else
+                    <span class="text-accent">{{ $item->status->label() }}</span>
+                @endif
+                <span class="text-[12px] font-bold text-accent">Change</span>
+            </span>
+        </button>
         <div class="flex items-center gap-3 py-[13px]">
             <x-icon name="map-pin" :size="18" class="shrink-0 text-ink-3" />
             <span class="w-[82px] shrink-0 text-[13.5px] font-semibold text-ink-2">Location</span>

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ItemStatus;
 use App\Models\Home;
 use App\Models\Item;
 use App\Support\Dimensions;
@@ -31,6 +32,21 @@ class ItemFactory extends Factory
             'note' => null,
             'photo_path' => null,
         ];
+    }
+
+    public function missing(): static
+    {
+        return $this->state(fn (): array => ['status' => ItemStatus::Missing]);
+    }
+
+    public function broken(): static
+    {
+        return $this->state(fn (): array => ['status' => ItemStatus::Broken]);
+    }
+
+    public function removed(): static
+    {
+        return $this->state(fn (): array => ['status' => ItemStatus::Removed]);
     }
 
     public function valued(?Money $value = null): static

@@ -1,5 +1,7 @@
 @php
     $missingMeta = \App\Livewire\Items\Index::MISSING_META;
+    $statusFilters = \App\Livewire\Items\Index::STATUS_FILTERS;
+    $filtering = $missing !== '' || $status !== '';
 @endphp
 
 <div class="mx-auto flex w-full flex-1 flex-col lg:max-w-none">
@@ -15,7 +17,7 @@
             <a href="{{ route('find') }}" wire:navigate>
                 <x-ui.icon-btn icon="search" />
             </a>
-            <x-ui.icon-btn icon="sliders" :accent="$missing !== ''" wire:click="$set('filterOpen', true)" />
+            <x-ui.icon-btn icon="sliders" :accent="$filtering" wire:click="$set('filterOpen', true)" />
         </div>
     </div>
 
@@ -35,7 +37,7 @@
                     <x-icon name="box" :size="15" /> Grid
                 </x-ui.seg-btn>
             </x-ui.seg>
-            <x-ui.icon-btn icon="sliders" :accent="$missing !== ''" wire:click="$set('filterOpen', true)" />
+            <x-ui.icon-btn icon="sliders" :accent="$filtering" wire:click="$set('filterOpen', true)" />
         </div>
     @endteleport
 
@@ -44,12 +46,18 @@
         <x-category-combobox :categories="$this->categories" property="cat" null-label="All categories" live />
     </div>
 
-    {{-- Active data-quality filter banner --}}
-    @if ($missing !== '' && isset($missingMeta[$missing]))
+    {{-- Active filter banner (data-quality + status) --}}
+    @if ($filtering)
+        @php
+            $filterLabels = array_filter([
+                $missingMeta[$missing]['label'] ?? null,
+                $statusFilters[$status] ?? null,
+            ]);
+        @endphp
         <div class="mx-5 mb-3 flex items-center gap-2.5 rounded-xl bg-accent-soft px-3 py-2.5 text-accent-ink lg:mx-[30px]">
             <x-icon name="filter" :size="16" :stroke="1.9" />
-            <span class="flex-1 text-[13.5px] font-bold">{{ $missingMeta[$missing]['label'] }} · {{ $this->items->total() }}</span>
-            <button type="button" class="cursor-pointer text-[13.5px] font-bold" wire:click="setMissing('')">Clear</button>
+            <span class="flex-1 text-[13.5px] font-bold">{{ implode(' · ', $filterLabels) }} · {{ $this->items->total() }}</span>
+            <button type="button" class="cursor-pointer text-[13.5px] font-bold" wire:click="clearFilters">Clear</button>
         </div>
     @endif
 
@@ -67,7 +75,9 @@
                                 {{ $item->place_id ? implode(' › ', $this->placeIndex->breadcrumb($item->place_id)) : 'No location' }}
                             </div>
                         </div>
-                        @if ($item->activeLend)
+                        @if ($item->status->pillVariant())
+                            <x-ui.pill :variant="$item->status->pillVariant()">{{ strtolower($item->status->label()) }}</x-ui.pill>
+                        @elseif ($item->activeLend)
                             <x-ui.pill variant="bad">lent</x-ui.pill>
                         @endif
                         <span class="text-[13.5px] font-semibold text-ink-2 tabular-nums">{{ $item->value?->format() ?? '—' }}</span>
@@ -148,7 +158,9 @@
                                     </td>
                                     <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ $item->value?->format() ?? '—' }}</td>
                                     <td class="px-4 py-2.5">
-                                        @if ($item->activeLend)
+                                        @if ($item->status->pillVariant())
+                                            <x-ui.pill :variant="$item->status->pillVariant()">{{ strtolower($item->status->label()) }}</x-ui.pill>
+                                        @elseif ($item->activeLend)
                                             <x-ui.pill variant="bad">lent</x-ui.pill>
                                         @else
                                             <span class="text-[12.5px] font-medium text-ink-3">In place</span>
@@ -172,7 +184,9 @@
                                         {{ $item->place_id ? implode(' › ', $this->placeIndex->breadcrumb($item->place_id)) : 'No location' }}
                                     </div>
                                 </div>
-                                @if ($item->activeLend)
+                                @if ($item->status->pillVariant())
+                                    <x-ui.pill :variant="$item->status->pillVariant()">{{ strtolower($item->status->label()) }}</x-ui.pill>
+                                @elseif ($item->activeLend)
                                     <x-ui.pill variant="bad">lent</x-ui.pill>
                                 @endif
                             </div>
@@ -193,9 +207,10 @@
         @endif
     </div>
 
-    {{-- Data-quality filter sheet --}}
+    {{-- Filter sheet: data-quality + status --}}
     @if ($filterOpen)
         <x-ui.sheet title="Show items" close="closeFilter">
+            <x-ui.section-label class="mb-1">Data quality</x-ui.section-label>
             <div class="flex flex-col">
                 @foreach (['' => ['label' => 'All items', 'sub' => null], 'cat' => ['label' => 'Uncategorized', 'sub' => 'No category set'], 'place' => ['label' => 'No location', 'sub' => 'Not assigned to a place'], 'value' => ['label' => 'Unpriced', 'sub' => 'No value recorded']] as $key => $option)
                     <button type="button" wire:click="setMissing('{{ $key }}')"
@@ -212,11 +227,29 @@
                     </button>
                 @endforeach
             </div>
+
+            <x-ui.section-label class="mt-5 mb-1">Status</x-ui.section-label>
+            <div class="flex flex-col">
+                @foreach (['' => 'Any status', ...$statusFilters] as $key => $label)
+                    <button type="button" wire:click="setStatusFilter('{{ $key }}')"
+                        class="flex cursor-pointer items-center gap-3 border-b border-line py-[13px] text-left last:border-0">
+                        <div class="flex-1 text-[15px] font-semibold">{{ $label }}</div>
+                        @if ($status === (string) $key)
+                            <x-icon name="check" :size="18" class="text-accent" />
+                        @endif
+                    </button>
+                @endforeach
+            </div>
         </x-ui.sheet>
     @endif
 
     {{-- Transfer sheet --}}
     @if ($this->transferItem)
         @include('livewire.items.partials.transfer-sheet')
+    @endif
+
+    {{-- Status sheet --}}
+    @if ($this->statusItem)
+        @include('livewire.items.partials.status-sheet')
     @endif
 </div>

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Concerns;
 
+use App\Enums\ItemStatus;
 use App\Models\Item;
 use App\Models\Lend;
 use App\Models\Place;
@@ -12,14 +13,16 @@ use Livewire\Attributes\Computed;
 
 /**
  * Item actions shared by the Items index (desktop detail pane) and the
- * full item detail screen: mark a lend returned, and the transfer flow
- * with its "will it fit?" verdict.
+ * full item detail screen: mark a lend returned, change the status, and
+ * the transfer flow with its "will it fit?" verdict.
  */
 trait ManagesItemActions
 {
     public ?int $transferItemId = null;
 
     public ?int $transferPlaceId = null;
+
+    public ?int $statusItemId = null;
 
     public function returnLend(int $lendId): void
     {
@@ -32,6 +35,45 @@ trait ManagesItemActions
         $this->refreshBoundItem();
 
         $this->dispatch('toast', message: 'Marked returned');
+    }
+
+    public function startStatus(int $itemId): void
+    {
+        $this->statusItemId = $itemId;
+    }
+
+    public function cancelStatus(): void
+    {
+        $this->statusItemId = null;
+    }
+
+    public function setStatus(int $itemId, string $status): void
+    {
+        $status = ItemStatus::from($status);
+        $item = Item::withRemoved()->findOrFail($itemId);
+
+        $this->authorize('update', $item);
+
+        $restoring = $item->status === ItemStatus::Removed && $status !== ItemStatus::Removed;
+
+        $item->update(['status' => $status]);
+
+        $this->cancelStatus();
+        $this->refreshBoundItem();
+
+        $this->dispatch('toast', message: match (true) {
+            $restoring => 'Restored to inventory',
+            $status === ItemStatus::InPlace => 'Marked in place',
+            $status === ItemStatus::Missing => 'Marked missing',
+            $status === ItemStatus::Broken => 'Marked broken',
+            default => 'Removed from inventory',
+        });
+    }
+
+    #[Computed]
+    public function statusItem(): ?Item
+    {
+        return $this->statusItemId === null ? null : Item::withRemoved()->find($this->statusItemId);
     }
 
     public function startTransfer(int $itemId): void
