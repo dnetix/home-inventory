@@ -24,7 +24,5 @@ class DatabaseSeeder extends Seeder
         $home = Home::create(['name' => "Diego's Home"]);
         $home->users()->attach($user, ['role' => 'owner']);
         $user->update(['current_home_id' => $home->id]);
-
-        $this->call(DemoSeeder::class);
     }
 }
