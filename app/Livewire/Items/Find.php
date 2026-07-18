@@ -2,11 +2,13 @@
 
 namespace App\Livewire\Items;
 
+use App\Livewire\Concerns\SelectsItems;
 use App\Models\Item;
 use App\Models\Place;
 use App\Support\PlaceTree;
 use App\Support\SearchItems;
 use Illuminate\Contracts\View\View;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
@@ -17,6 +19,8 @@ use Livewire\Component;
 #[Title('Find')]
 class Find extends Component
 {
+    use AuthorizesRequests, SelectsItems;
+
     #[Url(as: 'q')]
     public string $search = '';
 

@@ -76,6 +76,23 @@ class PlacesTest extends TestCase
             ->assertSee('Cordless drill');
     }
 
+    public function test_items_can_be_batch_moved_from_the_place_screen(): void
+    {
+        $shelf = Place::factory()->for($this->home)->create(['label' => 'Shelf B']);
+        $bin = Place::factory()->for($this->home)->create(['label' => 'Bin 1']);
+        $item = Item::factory()->for($this->home)->for($shelf, 'place')->create();
+
+        Livewire::test(Show::class, ['place' => $shelf])
+            ->call('toggleSelecting')
+            ->call('toggleSelected', $item->id)
+            ->call('openBatch', 'move')
+            ->set('batchPlaceId', $bin->id)
+            ->call('confirmBatchMove')
+            ->assertSet('selecting', false);
+
+        $this->assertSame($bin->id, $item->fresh()->place_id);
+    }
+
     public function test_a_place_can_be_edited(): void
     {
         $place = Place::factory()->for($this->home)->create(['label' => 'Old label']);

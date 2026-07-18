@@ -38,6 +38,24 @@ window.shrinkPhoto = async (file) => {
     }
 };
 
+// Batch selection state, kept client-side so checking items is instant.
+// `sel` is entangled (deferred) with the component's $selectedIds — the server
+// receives it with the next real request (opening the Move/Status sheet).
+document.addEventListener('alpine:init', () => {
+    window.Alpine.data('itemSelection', (sel) => ({
+        sel,
+        has(id) {
+            return this.sel.includes(id);
+        },
+        toggle(id) {
+            this.sel = this.has(id) ? this.sel.filter((other) => other !== id) : [...this.sel, id];
+        },
+        all(ids) {
+            this.sel = [...new Set([...this.sel, ...ids])];
+        },
+    }));
+});
+
 // Cmd/Ctrl+K opens the Find screen from anywhere.
 document.addEventListener('keydown', (event) => {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {

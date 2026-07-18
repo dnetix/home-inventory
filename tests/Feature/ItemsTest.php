@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\ItemStatus;
+use App\Livewire\Items\Find;
 use App\Livewire\Items\Form;
 use App\Livewire\Items\Index;
 use App\Livewire\Items\Show;
@@ -320,6 +321,86 @@ class ItemsTest extends TestCase
         $this->expectException(ModelNotFoundException::class);
 
         Livewire::test(Index::class)->call('setStatus', $foreign->id, 'missing');
+    }
+
+    public function test_batch_move_relocates_only_the_selected_items(): void
+    {
+        $shelf = Place::factory()->for($this->home)->create(['label' => 'Shelf A']);
+        $a = Item::factory()->for($this->home)->create(['name' => 'Hammer']);
+        $b = Item::factory()->for($this->home)->create(['name' => 'Saw']);
+        $untouched = Item::factory()->for($this->home)->create(['name' => 'Tape']);
+
+        Livewire::test(Index::class)
+            ->call('toggleSelecting')
+            ->call('toggleSelected', $a->id)
+            ->call('toggleSelected', $b->id)
+            ->call('openBatch', 'move')
+            ->set('batchPlaceId', $shelf->id)
+            ->call('confirmBatchMove')
+            ->assertSet('selecting', false);
+
+        $this->assertSame($shelf->id, $a->fresh()->place_id);
+        $this->assertSame($shelf->id, $b->fresh()->place_id);
+        $this->assertNull($untouched->fresh()->place_id);
+    }
+
+    public function test_batch_status_change_applies_to_all_selected_items(): void
+    {
+        $a = Item::factory()->for($this->home)->create();
+        $b = Item::factory()->for($this->home)->create();
+
+        Livewire::test(Index::class)
+            ->call('toggleSelecting')
+            ->call('selectMany', [$a->id, $b->id])
+            ->call('openBatch', 'status')
+            ->call('batchSetStatus', 'missing');
+
+        $this->assertSame(ItemStatus::Missing, $a->fresh()->status);
+        $this->assertSame(ItemStatus::Missing, $b->fresh()->status);
+    }
+
+    public function test_batch_remove_hides_items_from_the_list(): void
+    {
+        $item = Item::factory()->for($this->home)->create(['name' => 'Rusty rake']);
+
+        Livewire::test(Index::class)
+            ->call('toggleSelecting')
+            ->call('toggleSelected', $item->id)
+            ->call('openBatch', 'status')
+            ->call('batchSetStatus', 'removed')
+            ->assertDontSee('Rusty rake');
+
+        $this->assertSame(ItemStatus::Removed, $item->fresh()->status);
+    }
+
+    public function test_batch_operations_ignore_items_from_other_homes(): void
+    {
+        $otherHome = Home::factory()->create();
+        $foreign = Item::factory()->for($otherHome)->create();
+        $shelf = Place::factory()->for($this->home)->create();
+
+        Livewire::test(Index::class)
+            ->call('toggleSelecting')
+            ->call('selectMany', [$foreign->id])
+            ->call('openBatch', 'move')
+            ->set('batchPlaceId', $shelf->id)
+            ->call('confirmBatchMove');
+
+        $this->assertNull($foreign->fresh()->place_id);
+    }
+
+    public function test_batch_status_works_from_the_find_screen(): void
+    {
+        $item = Item::factory()->for($this->home)->create(['name' => 'Cordless drill']);
+
+        Livewire::test(Find::class)
+            ->set('search', 'drill')
+            ->call('toggleSelecting')
+            ->call('toggleSelected', $item->id)
+            ->call('openBatch', 'status')
+            ->call('batchSetStatus', 'broken');
+
+        $this->assertSame(ItemStatus::Broken, $item->fresh()->status);
     }
 
     public function test_items_from_another_home_are_not_accessible(): void

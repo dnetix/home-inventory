@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Places;
 
+use App\Livewire\Concerns\SelectsItems;
 use App\Livewire\Forms\PlaceForm;
 use App\Models\Item;
 use App\Models\Place;
@@ -14,7 +15,7 @@ use Livewire\Component;
 
 class Show extends Component
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, SelectsItems;
 
     public Place $place;
 
@@ -90,6 +91,15 @@ class Show extends Component
     public function tree(): PlaceTree
     {
         return new PlaceTree(Place::query()->get(), Item::query()->with(['category'])->get());
+    }
+
+    /**
+     * Alias for the shared batch partials, which expect a placeIndex.
+     */
+    #[Computed]
+    public function placeIndex(): PlaceTree
+    {
+        return $this->tree;
     }
 
     #[Computed]

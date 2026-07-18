@@ -1,4 +1,4 @@
-<div class="mx-auto flex w-full max-w-3xl flex-1 flex-col">
+<div class="mx-auto flex w-full max-w-3xl flex-1 flex-col" x-data="itemSelection($wire.entangle('selectedIds'))">
     {{-- Search bar --}}
     <div class="flex items-center gap-2 px-3 pt-6 pr-4 lg:px-[30px] lg:pt-[26px]">
         <a href="{{ route('items.index') }}" wire:navigate
@@ -44,13 +44,30 @@
             <x-empty-state icon="search" title="No matches for “{{ $search }}”"
                 sub="Check the spelling or widen the location." />
         @else
-            <div class="mb-3 text-xs font-semibold text-ink-3">
-                {{ $this->results->count() }} {{ Str::plural('match', $this->results->count()) }}
+            <div class="mb-3 flex items-center justify-between">
+                <span class="text-xs font-semibold text-ink-3">
+                    {{ $this->results->count() }} {{ Str::plural('match', $this->results->count()) }}
+                </span>
+                <button type="button" wire:click="toggleSelecting"
+                    class="cursor-pointer text-[13px] font-bold {{ $selecting ? 'text-accent' : 'text-ink-3' }}">
+                    {{ $selecting ? 'Done' : 'Select' }}
+                </button>
             </div>
             <div class="flex flex-col gap-2.5">
                 @foreach ($this->results as $item)
-                    <a href="{{ route('items.show', $item) }}" wire:navigate wire:key="r-{{ $item->id }}">
-                        <x-ui.card class="flex items-center gap-3 px-3 py-2.5 transition active:scale-[0.98]">
+                    @php
+                        $resultRing = $selecting ? "has($item->id) && 'ring-2 ring-accent'" : "''";
+                    @endphp
+                    <a href="{{ route('items.show', $item) }}" wire:navigate wire:key="r-{{ $item->id }}"
+                        @if ($selecting) x-on:click.prevent="toggle({{ $item->id }})" @endif>
+                        <x-ui.card class="flex items-center gap-3 px-3 py-2.5 transition active:scale-[0.98]"
+                            x-bind:class="{{ $resultRing }}">
+                            @if ($selecting)
+                                <span class="flex size-[22px] shrink-0 items-center justify-center rounded-full border transition"
+                                    x-bind:class="has({{ $item->id }}) ? 'border-accent bg-accent text-on-accent' : 'border-line-2'">
+                                    <x-icon name="check" :size="13" :stroke="2.5" x-show="has({{ $item->id }})" x-cloak />
+                                </span>
+                            @endif
                             <x-item-thumb class="size-12 rounded-xl" :item="$item" />
                             <div class="min-w-0 flex-1">
                                 <div class="truncate text-[15px] font-semibold">{{ $item->name }}</div>
@@ -73,4 +90,14 @@
             </div>
         @endif
     </div>
+
+    {{-- Batch selection --}}
+    @if ($selecting)
+        @include('livewire.items.partials.batch-bar', ['selectableIds' => $this->results->pluck('id')->values()->all()])
+    @endif
+    @if ($batchSheet === 'move')
+        @include('livewire.items.partials.batch-move-sheet')
+    @elseif ($batchSheet === 'status')
+        @include('livewire.items.partials.batch-status-sheet')
+    @endif
 </div>

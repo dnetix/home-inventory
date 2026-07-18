@@ -4,6 +4,7 @@ namespace App\Livewire\Items;
 
 use App\Enums\ItemStatus;
 use App\Livewire\Concerns\ManagesItemActions;
+use App\Livewire\Concerns\SelectsItems;
 use App\Models\Category;
 use App\Models\Item;
 use App\Models\Place;
@@ -25,7 +26,7 @@ use Livewire\WithPagination;
 #[Title('Items')]
 class Index extends Component
 {
-    use AuthorizesRequests, ManagesItemActions, WithPagination;
+    use AuthorizesRequests, ManagesItemActions, SelectsItems, WithPagination;
 
     #[Url(as: 'q')]
     public string $search = '';

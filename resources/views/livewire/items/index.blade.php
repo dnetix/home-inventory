@@ -4,7 +4,7 @@
     $filtering = $missing !== '' || $status !== '';
 @endphp
 
-<div class="mx-auto flex w-full flex-1 flex-col lg:max-w-none">
+<div class="mx-auto flex w-full flex-1 flex-col lg:max-w-none" x-data="itemSelection($wire.entangle('selectedIds'))">
     {{-- Header (mobile — desktop heading + actions live in the top bar) --}}
     <div class="flex items-end justify-between gap-3 px-5 pt-8 lg:hidden">
         <div>
@@ -17,6 +17,7 @@
             <a href="{{ route('find') }}" wire:navigate>
                 <x-ui.icon-btn icon="search" />
             </a>
+            <x-ui.icon-btn icon="check-circle" :accent="$selecting" wire:click="toggleSelecting" />
             <x-ui.icon-btn icon="sliders" :accent="$filtering" wire:click="$set('filterOpen', true)" />
         </div>
     </div>
@@ -37,6 +38,7 @@
                     <x-icon name="box" :size="15" /> Grid
                 </x-ui.seg-btn>
             </x-ui.seg>
+            <x-ui.icon-btn icon="check-circle" :accent="$selecting" wire:click="toggleSelecting" />
             <x-ui.icon-btn icon="sliders" :accent="$filtering" wire:click="$set('filterOpen', true)" />
         </div>
     @endteleport
@@ -67,7 +69,14 @@
             <x-ui.card class="divide-y divide-line px-4">
                 @foreach ($this->items as $item)
                     <a href="{{ route('items.show', $item) }}" wire:navigate wire:key="m-{{ $item->id }}"
+                        @if ($selecting) x-on:click.prevent="toggle({{ $item->id }})" @endif
                         class="flex items-center gap-3 py-2.5">
+                        @if ($selecting)
+                            <span class="flex size-[22px] shrink-0 items-center justify-center rounded-full border transition"
+                                x-bind:class="has({{ $item->id }}) ? 'border-accent bg-accent text-on-accent' : 'border-line-2'">
+                                <x-icon name="check" :size="13" :stroke="2.5" x-show="has({{ $item->id }})" x-cloak />
+                            </span>
+                        @endif
                         <x-item-thumb class="size-[46px] rounded-[11px]" :item="$item" />
                         <div class="min-w-0 flex-1">
                             <div class="truncate text-[15px] font-semibold">{{ $item->name }}</div>
@@ -106,6 +115,9 @@
                     <table class="w-full text-left text-[13.5px]">
                         <thead>
                             <tr class="border-b border-line text-[12px] font-bold tracking-[0.4px] text-ink-3 uppercase">
+                                @if ($selecting)
+                                    <th class="w-10 pl-4"></th>
+                                @endif
                                 @foreach (['name' => 'Item', 'category' => 'Category', 'location' => 'Location', 'value' => 'Value', 'status' => 'Status'] as $col => $label)
                                     <th class="px-4 py-3 {{ $col === 'value' ? 'text-right' : '' }}">
                                         <button type="button" wire:click="sortBy('{{ $col }}')"
@@ -122,8 +134,23 @@
                         </thead>
                         <tbody>
                             @foreach ($this->items as $item)
-                                <tr wire:key="t-{{ $item->id }}" wire:click="select({{ $item->id }})"
-                                    class="cursor-pointer border-b border-line last:border-0 {{ $selected === $item->id ? 'bg-accent-soft/60' : 'hover:bg-fill' }}">
+                                <tr wire:key="t-{{ $item->id }}"
+                                    @if ($selecting)
+                                        x-on:click="toggle({{ $item->id }})"
+                                        x-bind:class="has({{ $item->id }}) ? 'bg-accent-soft/60' : 'hover:bg-fill'"
+                                        class="cursor-pointer border-b border-line last:border-0"
+                                    @else
+                                        wire:click="select({{ $item->id }})"
+                                        class="cursor-pointer border-b border-line last:border-0 {{ $selected === $item->id ? 'bg-accent-soft/60' : 'hover:bg-fill' }}"
+                                    @endif>
+                                    @if ($selecting)
+                                        <td class="py-2.5 pl-4">
+                                            <span class="flex size-[20px] items-center justify-center rounded-full border transition"
+                                                x-bind:class="has({{ $item->id }}) ? 'border-accent bg-accent text-on-accent' : 'border-line-2'">
+                                                <x-icon name="check" :size="12" :stroke="2.5" x-show="has({{ $item->id }})" x-cloak />
+                                            </span>
+                                        </td>
+                                    @endif
                                     <td class="px-4 py-2.5">
                                         <div class="flex items-center gap-3">
                                             <x-item-thumb class="size-9 rounded-[9px]" :item="$item" :icon-size="16" />
@@ -174,8 +201,13 @@
             @else
                 <div class="grid grid-cols-2 gap-3.5 xl:grid-cols-3 2xl:grid-cols-4">
                     @foreach ($this->items as $item)
-                        <x-ui.card wire:key="g-{{ $item->id }}" wire:click="select({{ $item->id }})"
-                            class="cursor-pointer p-3 transition hover:shadow-md {{ $selected === $item->id ? 'ring-2 ring-accent' : '' }}">
+                        @php
+                            $gridRing = $selecting ? "has($item->id) && 'ring-2 ring-accent'" : "''";
+                        @endphp
+                        <x-ui.card wire:key="g-{{ $item->id }}"
+                            x-on:click="{{ $selecting ? 'toggle('.$item->id.')' : '$wire.select('.$item->id.')' }}"
+                            x-bind:class="{{ $gridRing }}"
+                            class="cursor-pointer p-3 transition hover:shadow-md {{ ! $selecting && $selected === $item->id ? 'ring-2 ring-accent' : '' }}">
                             <x-item-thumb class="h-[110px] w-full rounded-[10px]" :item="$item" :icon-size="30" />
                             <div class="mt-2.5 flex items-start justify-between gap-2">
                                 <div class="min-w-0">
@@ -251,5 +283,15 @@
     {{-- Status sheet --}}
     @if ($this->statusItem)
         @include('livewire.items.partials.status-sheet')
+    @endif
+
+    {{-- Batch selection --}}
+    @if ($selecting)
+        @include('livewire.items.partials.batch-bar', ['selectableIds' => $this->items->pluck('id')->values()->all()])
+    @endif
+    @if ($batchSheet === 'move')
+        @include('livewire.items.partials.batch-move-sheet')
+    @elseif ($batchSheet === 'status')
+        @include('livewire.items.partials.batch-status-sheet')
     @endif
 </div>

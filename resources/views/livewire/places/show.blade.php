@@ -11,7 +11,7 @@
         .($children->isNotEmpty() ? ' · '.$children->count().' sub-'.Str::plural('location', $children->count()) : '');
 @endphp
 
-<div class="mx-auto flex w-full max-w-2xl flex-1 flex-col lg:mx-0 lg:max-w-none">
+<div class="mx-auto flex w-full max-w-2xl flex-1 flex-col lg:mx-0 lg:max-w-none" x-data="itemSelection($wire.entangle('selectedIds'))">
     {{-- Nav bar (mobile — desktop heading + actions live in the top bar) --}}
     <div class="flex min-h-11 items-center gap-1.5 px-3 pt-4 pb-2 lg:hidden">
         <a href="{{ route('places.index') }}" wire:navigate
@@ -102,11 +102,26 @@
             @endif
 
             {{-- Items here (mobile caps the list at 6; desktop has room for all) --}}
-            <x-ui.section-label class="mb-3">Items here</x-ui.section-label>
+            <div class="mb-3 flex items-center justify-between">
+                <x-ui.section-label>Items here</x-ui.section-label>
+                @if ($listItems->isNotEmpty())
+                    <button type="button" wire:click="toggleSelecting"
+                        class="cursor-pointer text-[13px] font-bold {{ $selecting ? 'text-accent' : 'text-ink-3' }}">
+                        {{ $selecting ? 'Done' : 'Select' }}
+                    </button>
+                @endif
+            </div>
             <x-ui.card class="divide-y divide-line px-3.5">
                 @forelse ($listItems as $item)
                     <a href="{{ route('items.show', $item) }}" wire:navigate wire:key="pi-{{ $item->id }}"
+                        @if ($selecting) x-on:click.prevent="toggle({{ $item->id }})" @endif
                         @class(['items-center gap-3 py-2.5', 'flex' => $loop->index < 6, 'hidden lg:flex' => $loop->index >= 6])>
+                        @if ($selecting)
+                            <span class="flex size-[22px] shrink-0 items-center justify-center rounded-full border transition"
+                                x-bind:class="has({{ $item->id }}) ? 'border-accent bg-accent text-on-accent' : 'border-line-2'">
+                                <x-icon name="check" :size="13" :stroke="2.5" x-show="has({{ $item->id }})" x-cloak />
+                            </span>
+                        @endif
                         <x-item-thumb class="size-[42px] rounded-[10px]" :item="$item" :icon-size="18" />
                         <div class="min-w-0 flex-1">
                             <div class="truncate text-[14px] font-semibold">{{ $item->name }}</div>
@@ -139,6 +154,16 @@
             @endif
         </aside>
     </div>
+
+    {{-- Batch selection --}}
+    @if ($selecting)
+        @include('livewire.items.partials.batch-bar', ['selectableIds' => $listItems->pluck('id')->values()->all()])
+    @endif
+    @if ($batchSheet === 'move')
+        @include('livewire.items.partials.batch-move-sheet')
+    @elseif ($batchSheet === 'status')
+        @include('livewire.items.partials.batch-status-sheet')
+    @endif
 
     {{-- Edit / add-child sheet --}}
     @if ($editor !== '')
