@@ -1,7 +1,6 @@
 services:
     home-inventory:
-        build:
-            context: .
+        image: dnetix/octane-php:8.3
         container_name: inventory-app
         volumes:
             - .:/app
