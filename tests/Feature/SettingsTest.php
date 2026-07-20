@@ -11,6 +11,7 @@ use App\Models\Item;
 use App\Models\User;
 use App\Support\Dimensions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -88,6 +89,43 @@ class SettingsTest extends TestCase
             ->set('email', 'taken@example.com')
             ->call('save')
             ->assertHasErrors(['email']);
+    }
+
+    public function test_password_can_be_changed(): void
+    {
+        Livewire::test(Account::class)
+            ->set('currentPassword', 'password')
+            ->set('password', 'new-secret-123')
+            ->set('passwordConfirmation', 'new-secret-123')
+            ->call('updatePassword')
+            ->assertHasNoErrors()
+            ->assertSet('currentPassword', '')
+            ->assertSet('password', '')
+            ->assertSet('passwordConfirmation', '');
+
+        $this->assertTrue(Hash::check('new-secret-123', $this->user->fresh()->password));
+    }
+
+    public function test_password_change_rejects_a_wrong_current_password(): void
+    {
+        Livewire::test(Account::class)
+            ->set('currentPassword', 'not-my-password')
+            ->set('password', 'new-secret-123')
+            ->set('passwordConfirmation', 'new-secret-123')
+            ->call('updatePassword')
+            ->assertHasErrors(['currentPassword']);
+
+        $this->assertTrue(Hash::check('password', $this->user->fresh()->password));
+    }
+
+    public function test_password_change_requires_a_matching_confirmation(): void
+    {
+        Livewire::test(Account::class)
+            ->set('currentPassword', 'password')
+            ->set('password', 'new-secret-123')
+            ->set('passwordConfirmation', 'different-thing')
+            ->call('updatePassword')
+            ->assertHasErrors(['password']);
     }
 
     public function test_more_menu_renders_with_counts(): void

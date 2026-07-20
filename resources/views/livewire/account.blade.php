@@ -34,6 +34,20 @@
             <x-ui.btn variant="tonal" size="sm" class="self-start" wire:click="save">Save changes</x-ui.btn>
         </x-ui.card>
 
+        {{-- Password --}}
+        <x-ui.section-label class="mt-6 mb-2.5">Password</x-ui.section-label>
+        <x-ui.card class="flex flex-col gap-4 px-4 py-4">
+            <x-ui.field label="Current password" name="currentPassword" icon="lock" type="password"
+                wire:model="currentPassword" autocomplete="current-password" required />
+            <x-ui.field label="New password" name="password" icon="lock" type="password"
+                wire:model="password" autocomplete="new-password" required />
+            <x-ui.field label="Confirm new password" name="passwordConfirmation" icon="lock" type="password"
+                wire:model="passwordConfirmation" autocomplete="new-password" required />
+            <x-ui.btn variant="tonal" size="sm" class="self-start" wire:click="updatePassword">
+                Update password
+            </x-ui.btn>
+        </x-ui.card>
+
         {{-- Home --}}
         <x-ui.section-label class="mt-6 mb-2.5">Home</x-ui.section-label>
         <x-ui.card class="px-4 py-1">
