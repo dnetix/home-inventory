@@ -75,6 +75,45 @@ class ItemsTest extends TestCase
             ->assertSee('Passport');
     }
 
+    public function test_index_filters_by_tag(): void
+    {
+        $tag = Tag::factory()->for($this->home)->create(['label' => 'fragile']);
+        $tagged = Item::factory()->for($this->home)->create(['name' => 'Glass vase']);
+        $tagged->tags()->attach($tag);
+        Item::factory()->for($this->home)->create(['name' => 'Anvil']);
+
+        Livewire::test(Index::class)
+            ->call('setTagFilter', $tag->id)
+            ->assertSee('Glass vase')
+            ->assertDontSee('Anvil')
+            ->call('clearFilters')
+            ->assertSee('Anvil');
+    }
+
+    public function test_index_tag_filter_ignores_other_homes_tags(): void
+    {
+        $otherHome = Home::factory()->create();
+        $foreignTag = Tag::factory()->for($otherHome)->create();
+        Item::factory()->for($this->home)->create(['name' => 'Glass vase']);
+
+        Livewire::test(Index::class)
+            ->call('setTagFilter', $foreignTag->id)
+            ->assertSet('tag', null)
+            ->assertSee('Glass vase');
+    }
+
+    public function test_index_shows_tags_only_when_the_toggle_is_on(): void
+    {
+        $tag = Tag::factory()->for($this->home)->create(['label' => 'heirloom']);
+        $item = Item::factory()->for($this->home)->create(['name' => 'Pocket watch']);
+        $item->tags()->attach($tag);
+
+        Livewire::test(Index::class)
+            ->assertDontSee('heirloom')
+            ->set('showTags', true)
+            ->assertSee('heirloom');
+    }
+
     public function test_index_missing_data_filter(): void
     {
         Item::factory()->for($this->home)->create(['name' => 'Unpriced thing', 'value' => null]);

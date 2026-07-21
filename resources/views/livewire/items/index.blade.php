@@ -1,7 +1,7 @@
 @php
     $missingMeta = \App\Livewire\Items\Index::MISSING_META;
     $statusFilters = \App\Livewire\Items\Index::STATUS_FILTERS;
-    $filtering = $missing !== '' || $status !== '';
+    $filtering = $missing !== '' || $status !== '' || $tag !== null;
 @endphp
 
 <div class="mx-auto flex w-full flex-1 flex-col lg:max-w-none" x-data="itemSelection($wire.entangle('selectedIds'))">
@@ -54,6 +54,7 @@
             $filterLabels = array_filter([
                 $missingMeta[$missing]['label'] ?? null,
                 $statusFilters[$status] ?? null,
+                $tag !== null ? '#'.$this->tags->firstWhere('id', $tag)?->label : null,
             ]);
         @endphp
         <div class="mx-5 mb-3 flex items-center gap-2.5 rounded-xl bg-accent-soft px-3 py-2.5 text-accent-ink lg:mx-[30px]">
@@ -83,6 +84,9 @@
                             <div class="mt-0.5 truncate text-[12.5px] font-medium text-ink-3">
                                 {{ $item->place_id ? implode(' › ', $this->placeIndex->breadcrumb($item->place_id)) : 'No location' }}
                             </div>
+                            @if ($showTags && $item->tags->isNotEmpty())
+                                <div class="mt-1">@include('livewire.items.partials.tag-chips')</div>
+                            @endif
                         </div>
                         @if ($item->status->pillVariant())
                             <x-ui.pill :variant="$item->status->pillVariant()">{{ strtolower($item->status->label()) }}</x-ui.pill>
@@ -130,6 +134,9 @@
                                         </button>
                                     </th>
                                 @endforeach
+                                @if ($showTags)
+                                    <th class="px-4 py-3 uppercase">Tags</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -193,6 +200,15 @@
                                             <span class="text-[12.5px] font-medium text-ink-3">In place</span>
                                         @endif
                                     </td>
+                                    @if ($showTags)
+                                        <td class="px-4 py-2.5">
+                                            @if ($item->tags->isNotEmpty())
+                                                @include('livewire.items.partials.tag-chips')
+                                            @else
+                                                <span class="text-ink-4">—</span>
+                                            @endif
+                                        </td>
+                                    @endif
                                 </tr>
                             @endforeach
                         </tbody>
@@ -222,6 +238,9 @@
                                     <x-ui.pill variant="bad">lent</x-ui.pill>
                                 @endif
                             </div>
+                            @if ($showTags && $item->tags->isNotEmpty())
+                                <div class="mt-1.5">@include('livewire.items.partials.tag-chips')</div>
+                            @endif
                         </x-ui.card>
                     @endforeach
                 </div>
@@ -242,7 +261,28 @@
     {{-- Filter sheet: data-quality + status --}}
     @if ($filterOpen)
         <x-ui.sheet title="Show items" close="closeFilter">
-            <x-ui.section-label class="mb-1">Data quality</x-ui.section-label>
+            <x-ui.section-label class="mb-1">Tags</x-ui.section-label>
+            <div class="flex items-center gap-3 border-b border-line py-[13px]">
+                <span class="flex-1">
+                    <span class="block text-[15px] font-semibold">Show tags</span>
+                    <span class="block text-[12.5px] font-medium text-ink-3">Display each item's tags on rows and cards</span>
+                </span>
+                <x-ui.switch :checked="$showTags" wire:model.live="showTags" />
+            </div>
+            @if ($this->tags->isNotEmpty())
+                <div class="flex flex-wrap gap-2 py-3">
+                    <x-ui.chip :on="$tag === null" :outline="$tag !== null" wire:click="setTagFilter('')">Any tag</x-ui.chip>
+                    @foreach ($this->tags as $option)
+                        <x-ui.chip wire:key="ft-{{ $option->id }}" :dot="$option->color"
+                            :on="$tag === $option->id" :outline="$tag !== $option->id"
+                            wire:click="setTagFilter({{ $option->id }})">
+                            {{ $option->label }}
+                        </x-ui.chip>
+                    @endforeach
+                </div>
+            @endif
+
+            <x-ui.section-label class="mt-5 mb-1">Data quality</x-ui.section-label>
             <div class="flex flex-col">
                 @foreach (['' => ['label' => 'All items', 'sub' => null], 'cat' => ['label' => 'Uncategorized', 'sub' => 'No category set'], 'place' => ['label' => 'No location', 'sub' => 'Not assigned to a place'], 'value' => ['label' => 'Unpriced', 'sub' => 'No value recorded']] as $key => $option)
                     <button type="button" wire:click="setMissing('{{ $key }}')"

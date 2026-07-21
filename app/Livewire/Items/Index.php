@@ -8,6 +8,7 @@ use App\Livewire\Concerns\SelectsItems;
 use App\Models\Category;
 use App\Models\Item;
 use App\Models\Place;
+use App\Models\Tag;
 use App\Support\PlaceTree;
 use App\Support\SearchItems;
 use App\Support\UnitFormatter;
@@ -42,10 +43,16 @@ class Index extends Component
     public string $status = '';
 
     #[Url]
+    public ?int $tag = null;
+
+    #[Url]
     public ?int $selected = null;
 
     #[Session('items.view')]
     public string $view = 'table';
+
+    #[Session('items.tags')]
+    public bool $showTags = false;
 
     #[Url]
     public string $sort = 'name';
@@ -76,7 +83,7 @@ class Index extends Component
 
     public function updated(string $property): void
     {
-        if (in_array($property, ['search', 'cat', 'missing', 'status'], true)) {
+        if (in_array($property, ['search', 'cat', 'missing', 'status', 'tag'], true)) {
             $this->resetPage();
         }
     }
@@ -114,10 +121,18 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function setTagFilter(int|string $tagId): void
+    {
+        $this->tag = $tagId === '' ? null : Tag::query()->find($tagId)?->id;
+        $this->filterOpen = false;
+        $this->resetPage();
+    }
+
     public function clearFilters(): void
     {
         $this->missing = '';
         $this->status = '';
+        $this->tag = null;
         $this->resetPage();
     }
 
@@ -133,6 +148,15 @@ class Index extends Component
     public function categories(): Collection
     {
         return Category::pickerOrdered();
+    }
+
+    /**
+     * @return Collection<int, Tag>
+     */
+    #[Computed]
+    public function tags(): Collection
+    {
+        return Tag::query()->orderBy('label')->get();
     }
 
     /**
@@ -172,6 +196,10 @@ class Index extends Component
             'removed' => $query->withRemoved()->where('status', ItemStatus::Removed),
             default => null,
         };
+
+        if ($this->tag !== null) {
+            $query->whereHas('tags', fn (Builder $tags) => $tags->whereKey($this->tag));
+        }
 
         if (! $searching || $this->sort !== 'name' || $this->dir !== 'asc') {
             $this->applySort($query);
