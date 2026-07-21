@@ -501,6 +501,18 @@ class ItemsTest extends TestCase
         $this->assertSame(ItemStatus::Broken, $item->fresh()->status);
     }
 
+    public function test_find_results_show_the_status_pill(): void
+    {
+        Item::factory()->for($this->home)->missing()->create(['name' => 'Cordless drill']);
+        $lentItem = Item::factory()->for($this->home)->create(['name' => 'Cordless sander']);
+        Lend::factory()->for($this->home)->for($lentItem)->create();
+
+        Livewire::test(Find::class)
+            ->set('search', 'cordless')
+            ->assertSee('missing')
+            ->assertSee('lent');
+    }
+
     public function test_items_from_another_home_are_not_accessible(): void
     {
         $otherHome = Home::factory()->create();

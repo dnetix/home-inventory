@@ -24,14 +24,6 @@ class Find extends Component
     #[Url(as: 'q')]
     public string $search = '';
 
-    #[Url]
-    public ?int $scope = null;
-
-    public function setScope(?int $placeId): void
-    {
-        $this->scope = $this->scope === $placeId ? null : $placeId;
-    }
-
     /**
      * @return Collection<int, Item>
      */
@@ -42,18 +34,7 @@ class Find extends Component
             return new Collection;
         }
 
-        return (new SearchItems)->query($this->search, $this->scope)->limit(30)->get();
-    }
-
-    /**
-     * Top-level places offered as quick scopes.
-     *
-     * @return Collection<int, Place>
-     */
-    #[Computed]
-    public function scopes(): Collection
-    {
-        return $this->placeIndex->roots()->take(4);
+        return (new SearchItems)->query($this->search)->with('activeLend')->limit(30)->get();
     }
 
     /**
