@@ -20,13 +20,33 @@ class Index extends Component
 
     public function save(): void
     {
-        $this->authorize('create', Tag::class);
+        $editing = $this->form->tag !== null;
+
+        $editing
+            ? $this->authorize('update', $this->form->tag)
+            : $this->authorize('create', Tag::class);
 
         $this->form->save();
 
         unset($this->tags);
 
-        $this->dispatch('toast', message: 'Tag created');
+        $this->dispatch('toast', message: $editing ? 'Tag updated' : 'Tag created');
+    }
+
+    public function startEdit(int $tagId): void
+    {
+        $tag = Tag::findOrFail($tagId);
+
+        $this->authorize('update', $tag);
+
+        $this->form->setTag($tag);
+        $this->resetErrorBag();
+    }
+
+    public function cancelEdit(): void
+    {
+        $this->form->reset();
+        $this->resetErrorBag();
     }
 
     public function delete(int $tagId): void
@@ -36,6 +56,10 @@ class Index extends Component
         $this->authorize('delete', $tag);
 
         $tag->delete();
+
+        if ($this->form->tag?->id === $tagId) {
+            $this->form->reset();
+        }
 
         unset($this->tags);
 

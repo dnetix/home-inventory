@@ -133,6 +133,7 @@
                             <x-ui.chip wire:key="tag-{{ $tag->id }}" :dot="$tag->color"
                                 :on="in_array($tag->id, $form->tagIds, true)"
                                 :outline="! in_array($tag->id, $form->tagIds, true)"
+                                :title="$tag->description"
                                 wire:click="toggleTag({{ $tag->id }})">
                                 {{ $tag->label }}
                             </x-ui.chip>

@@ -1,6 +1,6 @@
-<div class="mx-auto flex w-full max-w-2xl flex-1 flex-col">
-    {{-- Nav bar --}}
-    <div class="flex min-h-11 items-center gap-1.5 px-3 pt-4 pb-2 lg:px-[30px] lg:pt-[26px]">
+<div class="mx-auto flex w-full max-w-2xl flex-1 flex-col lg:mx-0">
+    {{-- Nav bar (mobile — desktop heading + actions live in the top bar) --}}
+    <div class="flex min-h-11 items-center gap-1.5 px-3 pt-4 pb-2 lg:hidden">
         <a href="{{ route('more') }}" wire:navigate
             class="-ml-1.5 flex size-[38px] shrink-0 items-center justify-center rounded-full text-accent transition active:scale-90">
             <x-icon name="chevron-left" :size="26" :stroke="2" />
@@ -10,7 +10,18 @@
         <x-ui.icon-btn icon="plus" accent wire:click="openCreate" />
     </div>
 
-    <div class="flex-1 px-5 pb-6 lg:px-[30px]">
+    @teleport('#topbar-page')
+        <x-topbar-heading title="Categories"
+            :subtitle="$this->categories->count().' '.Str::plural('category', $this->categories->count())" />
+    @endteleport
+
+    @teleport('#topbar-actions')
+        <x-ui.btn variant="tonal" size="sm" wire:click="openCreate">
+            <x-icon name="plus" :size="15" /> New category
+        </x-ui.btn>
+    @endteleport
+
+    <div class="flex-1 px-5 pb-6 lg:px-[30px] lg:pt-[18px]">
         @if ($this->categories->isEmpty())
             <x-empty-state icon="layers" title="No categories yet" sub="Group your items with the + button." />
         @else

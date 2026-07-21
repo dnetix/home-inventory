@@ -7,6 +7,8 @@
         ['label' => 'Places', 'icon' => 'map-pin', 'route' => 'places.index', 'active' => 'places.*'],
         ['label' => 'Lending', 'icon' => 'hand', 'route' => 'lending.index', 'active' => 'lending.*'],
         ['label' => 'Upkeep', 'icon' => 'calendar', 'route' => 'upkeep.index', 'active' => 'upkeep.*'],
+        ['label' => 'Categories', 'icon' => 'layers', 'route' => 'categories.index', 'active' => 'categories.*'],
+        ['label' => 'Tags', 'icon' => 'tag', 'route' => 'tags.index', 'active' => 'tags.*'],
     ];
 
     $tabs = [

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-#[Fillable(['label', 'color'])]
+#[Fillable(['label', 'color', 'description'])]
 class Tag extends Model
 {
     use BelongsToHome;

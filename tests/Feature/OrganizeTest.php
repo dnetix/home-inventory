@@ -9,6 +9,7 @@ use App\Models\Home;
 use App\Models\Item;
 use App\Models\Tag;
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -104,6 +105,54 @@ class OrganizeTest extends TestCase
             ->set('form.label', 'seasonal')
             ->call('save')
             ->assertHasErrors(['form.label']);
+    }
+
+    public function test_a_tag_can_be_renamed_with_notes(): void
+    {
+        $tag = Tag::factory()->for($this->home)->create(['label' => 'seasonal']);
+
+        Livewire::test(TagsIndex::class)
+            ->call('startEdit', $tag->id)
+            ->assertSet('form.label', 'seasonal')
+            ->set('form.label', 'Holiday')
+            ->set('form.description', 'Only used part of the year')
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertSet('form.tag', null);
+
+        $tag->refresh();
+        $this->assertSame('holiday', $tag->label);
+        $this->assertSame('Only used part of the year', $tag->description);
+    }
+
+    public function test_editing_a_tag_keeps_its_own_label_valid(): void
+    {
+        $tag = Tag::factory()->for($this->home)->create(['label' => 'seasonal']);
+
+        Livewire::test(TagsIndex::class)
+            ->call('startEdit', $tag->id)
+            ->set('form.description', 'Winter stuff')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame('Winter stuff', $tag->fresh()->description);
+    }
+
+    public function test_tag_notes_show_on_the_list(): void
+    {
+        Tag::factory()->for($this->home)->create(['label' => 'fragile', 'description' => 'Handle with care when moving']);
+
+        Livewire::test(TagsIndex::class)->assertSee('Handle with care when moving');
+    }
+
+    public function test_tags_from_another_home_cannot_be_edited(): void
+    {
+        $otherHome = Home::factory()->create();
+        $tag = Tag::factory()->for($otherHome)->create();
+
+        $this->expectException(ModelNotFoundException::class);
+
+        Livewire::test(TagsIndex::class)->call('startEdit', $tag->id);
     }
 
     public function test_deleting_a_tag_detaches_it_from_items(): void
