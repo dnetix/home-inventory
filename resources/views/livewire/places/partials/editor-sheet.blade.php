@@ -15,14 +15,7 @@
 
         <div>
             <div class="mb-[7px] text-[12.5px] font-bold text-ink-2">Icon</div>
-            <div class="flex gap-2">
-                @foreach (\App\Livewire\Forms\PlaceForm::GLYPHS as $glyph)
-                    <button type="button" wire:click="$set('form.glyph', '{{ $glyph }}')"
-                        class="flex size-11 cursor-pointer items-center justify-center rounded-xl border transition {{ $form->glyph === $glyph ? 'border-accent bg-accent-soft text-accent-ink' : 'border-line-2 bg-surface text-ink-2' }}">
-                        <x-icon :name="$glyph" :size="19" />
-                    </button>
-                @endforeach
-            </div>
+            @include('livewire.partials.glyph-picker')
         </div>
 
         <div>

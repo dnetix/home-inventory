@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Places;
 
+use App\Livewire\Concerns\SearchesGlyphs;
 use App\Livewire\Forms\PlaceForm;
 use App\Models\Item;
 use App\Models\Place;
@@ -18,7 +19,7 @@ use Livewire\Component;
 #[Title('Places')]
 class Index extends Component
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, SearchesGlyphs;
 
     public PlaceForm $form;
 
@@ -59,6 +60,20 @@ class Index extends Component
         $this->editorOpen = false;
         $this->form->reset();
         $this->form->resetValidation();
+        $this->reset('glyphSearch');
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function defaultGlyphs(): array
+    {
+        return PlaceForm::GLYPHS;
+    }
+
+    protected function currentGlyph(): string
+    {
+        return $this->form->glyph;
     }
 
     public function save(): void

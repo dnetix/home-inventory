@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Categories;
 
+use App\Livewire\Concerns\SearchesGlyphs;
 use App\Livewire\Forms\CategoryForm;
 use App\Models\Category;
 use App\Models\Item;
@@ -15,14 +16,12 @@ use Livewire\Component;
 #[Title('Categories')]
 class Index extends Component
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, SearchesGlyphs;
 
     public CategoryForm $form;
 
     /** @var list<int> */
     public array $open = [];
-
-    public bool $editorOpen = false;
 
     public function toggle(int $categoryId): void
     {
@@ -31,42 +30,52 @@ class Index extends Component
             : [...$this->open, $categoryId];
     }
 
-    public function openCreate(): void
-    {
-        $this->authorize('create', Category::class);
-
-        $this->form->reset();
-        $this->form->resetValidation();
-        $this->editorOpen = true;
-    }
-
-    public function openEdit(int $categoryId): void
+    public function startEdit(int $categoryId): void
     {
         $category = Category::findOrFail($categoryId);
 
         $this->authorize('update', $category);
 
         $this->form->setCategory($category);
-        $this->editorOpen = true;
+        $this->reset('glyphSearch');
+        $this->resetErrorBag();
     }
 
-    public function closeEditor(): void
+    public function cancelEdit(): void
     {
-        $this->editorOpen = false;
         $this->form->reset();
-        $this->form->resetValidation();
+        $this->reset('glyphSearch');
+        $this->resetErrorBag();
     }
 
     public function save(): void
     {
         $editing = $this->form->category !== null;
 
+        $editing
+            ? $this->authorize('update', $this->form->category)
+            : $this->authorize('create', Category::class);
+
         $this->form->save();
 
-        $this->closeEditor();
+        $this->form->reset();
+        $this->reset('glyphSearch');
         unset($this->categories, $this->counts);
 
         $this->dispatch('toast', message: $editing ? 'Category saved' : 'Category added');
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function defaultGlyphs(): array
+    {
+        return CategoryForm::GLYPHS;
+    }
+
+    protected function currentGlyph(): string
+    {
+        return $this->form->glyph;
     }
 
     public function delete(int $categoryId): void
@@ -77,7 +86,11 @@ class Index extends Component
 
         $category->delete();
 
-        $this->closeEditor();
+        if ($this->form->category?->id === $categoryId) {
+            $this->form->reset();
+            $this->resetErrorBag();
+        }
+
         unset($this->categories, $this->counts);
 
         $this->dispatch('toast', message: 'Category deleted — items are now uncategorized');

@@ -63,6 +63,18 @@ class PlacesTest extends TestCase
         $this->assertNull($place->parent_id);
     }
 
+    public function test_a_place_accepts_any_lucide_glyph(): void
+    {
+        Livewire::test(Index::class)
+            ->call('openEditor')
+            ->set('form.label', 'Garden shed')
+            ->set('form.glyph', 'shovel')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertTrue(Place::forHome($this->home)->where('glyph', 'shovel')->exists());
+    }
+
     public function test_show_renders_capacity_and_items(): void
     {
         $shelf = Place::factory()->for($this->home)

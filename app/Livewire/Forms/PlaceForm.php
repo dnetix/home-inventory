@@ -6,6 +6,7 @@ use App\Models\Item;
 use App\Models\Place;
 use App\Support\CurrentHome;
 use App\Support\Dimensions;
+use App\Support\IconLibrary;
 use App\Support\PlaceTree;
 use App\Support\UnitFormatter;
 use Illuminate\Support\Collection;
@@ -33,7 +34,10 @@ class PlaceForm extends Form
 
     public string $d = '';
 
-    public const array GLYPHS = ['home', 'box', 'wrench'];
+    public const array GLYPHS = [
+        'home', 'box', 'wrench', 'warehouse', 'archive', 'sofa', 'bed-double',
+        'refrigerator', 'car', 'door-open', 'trees', 'toolbox',
+    ];
 
     /**
      * @return array<string, mixed>
@@ -45,7 +49,14 @@ class PlaceForm extends Form
         return [
             'label' => ['required', 'string', 'max:80'],
             'description' => ['nullable', 'string', 'max:255'],
-            'glyph' => [Rule::in(self::GLYPHS)],
+            'glyph' => [
+                'required', 'string',
+                function (string $attribute, mixed $value, callable $fail): void {
+                    if (! in_array($value, self::GLYPHS, true) && ! IconLibrary::has($value)) {
+                        $fail('Pick an icon from the list.');
+                    }
+                },
+            ],
             'parentId' => [
                 'nullable',
                 Rule::exists('places', 'id')->where('home_id', $homeId),

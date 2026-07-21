@@ -4,6 +4,7 @@ namespace App\Livewire\Forms;
 
 use App\Models\Category;
 use App\Support\CurrentHome;
+use App\Support\IconLibrary;
 use Illuminate\Validation\Rule;
 use Livewire\Form;
 
@@ -33,7 +34,14 @@ class CategoryForm extends Form
         return [
             'label' => ['required', 'string', 'max:60'],
             'color' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
-            'glyph' => [Rule::in(self::GLYPHS)],
+            'glyph' => [
+                'required', 'string',
+                function (string $attribute, mixed $value, callable $fail): void {
+                    if (! in_array($value, self::GLYPHS, true) && ! IconLibrary::has($value)) {
+                        $fail('Pick an icon from the list.');
+                    }
+                },
+            ],
             'parentId' => [
                 'nullable',
                 Rule::exists('categories', 'id')->where('home_id', $homeId)->whereNull('parent_id'),

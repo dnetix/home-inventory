@@ -49,7 +49,6 @@ class OrganizeTest extends TestCase
         $tools = Category::factory()->for($this->home)->create(['label' => 'Tools']);
 
         Livewire::test(CategoriesIndex::class)
-            ->call('openCreate')
             ->set('form.label', 'Hand tools')
             ->set('form.color', '#4f74e3')
             ->set('form.parentId', $tools->id)
@@ -68,10 +67,62 @@ class OrganizeTest extends TestCase
         $other = Category::factory()->for($this->home)->create(['label' => 'Kitchen']);
 
         Livewire::test(CategoriesIndex::class)
-            ->call('openEdit', $tools->id)
+            ->call('startEdit', $tools->id)
             ->set('form.parentId', $other->id)
             ->call('save')
             ->assertHasErrors(['form.parentId']);
+    }
+
+    public function test_a_category_accepts_any_lucide_glyph(): void
+    {
+        Livewire::test(CategoriesIndex::class)
+            ->set('form.label', 'Workshop')
+            ->set('form.glyph', 'hammer')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertTrue(Category::forHome($this->home)->where('glyph', 'hammer')->exists());
+    }
+
+    public function test_unknown_glyph_names_are_rejected(): void
+    {
+        Livewire::test(CategoriesIndex::class)
+            ->set('form.label', 'Workshop')
+            ->set('form.glyph', 'definitely-not-an-icon')
+            ->call('save')
+            ->assertHasErrors(['form.glyph']);
+    }
+
+    public function test_the_glyph_picker_search_shows_matching_icons(): void
+    {
+        Livewire::test(CategoriesIndex::class)
+            ->set('glyphSearch', 'guitar')
+            ->assertSeeHtml('title="guitar"');
+    }
+
+    public function test_a_category_can_be_renamed_in_place(): void
+    {
+        $category = Category::factory()->for($this->home)->create(['label' => 'Tools']);
+
+        Livewire::test(CategoriesIndex::class)
+            ->call('startEdit', $category->id)
+            ->assertSet('form.label', 'Tools')
+            ->set('form.label', 'Hardware')
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertSet('form.category', null);
+
+        $this->assertSame('Hardware', $category->fresh()->label);
+    }
+
+    public function test_categories_from_another_home_cannot_be_edited(): void
+    {
+        $otherHome = Home::factory()->create();
+        $category = Category::factory()->for($otherHome)->create();
+
+        $this->expectException(ModelNotFoundException::class);
+
+        Livewire::test(CategoriesIndex::class)->call('startEdit', $category->id);
     }
 
     public function test_deleting_a_category_leaves_items_uncategorized(): void

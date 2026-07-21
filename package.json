@@ -4,12 +4,14 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
+        "build:icons": "node scripts/build-icons.mjs",
         "dev": "vite"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^3.1",
+        "lucide-static": "^1.25.0",
         "tailwindcss": "^4.0.0",
         "vite": "^8.0.0"
     },

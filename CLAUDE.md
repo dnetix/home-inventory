@@ -45,6 +45,8 @@ Login: `dnetix@gmail.com` / `password` (seeded via `php artisan migrate:fresh --
 
 ## Known gotchas
 
+- Icons: `x-icon` renders ~46 hand-drawn cases in its `@switch`, then falls back to the full Lucide set via `App\Support\IconLibrary` reading `resources/icons/lucide.php` (generated + committed — regenerate with `npm run build:icons` after bumping the `lucide-static` devDependency). Glyph pickers (categories + places) search it via the `SearchesGlyphs` trait and the shared `livewire/partials/glyph-picker.blade.php`; glyph validation accepts the form's GLYPHS defaults plus any Lucide name.
+- Blade component-tag attributes do NOT compile directives like `@js()` — they ship as literal text (broke the tag color picker once). Use `{{ }}` echoes inside component-tag attributes; plain-HTML-tag attributes are fine with either.
 - Octane workers persist (`--workers=4 --max-requests=500`): run `php artisan octane:reload` after ANY change (PHP, Blade, asset rebuilds) or the browser serves stale code/asset hashes. The code sits on a slow 9p Windows bind mount — that's why worker persistence + the OPcache tuning in the Dockerfile matter (see the perf-fix commits).
 - Livewire 4's layout config key is `component_layout` (NOT v3's `layout`); its default `layouts::app` hint doesn't exist here.
 - Tests still fake images with `UploadedFile::fake()->create('x.jpg', 128, 'image/jpeg')` (works regardless of GD; the container now HAS gd+exif for `PhotoShrinker`).
