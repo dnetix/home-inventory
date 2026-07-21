@@ -120,6 +120,19 @@ class ItemPhotoTest extends TestCase
         Storage::disk('local')->assertMissing($item->photo_path);
     }
 
+    public function test_a_failed_photo_write_aborts_the_save_with_a_generic_error(): void
+    {
+        config(['filesystems.photos' => 'broken-disk']);
+
+        Livewire::test(Form::class)
+            ->set('form.name', 'Cordless drill')
+            ->set('photo', UploadedFile::fake()->create('drill.jpg', 128, 'image/jpeg'))
+            ->call('save')
+            ->assertHasErrors(['photo']);
+
+        $this->assertSame(0, Item::forHome($this->home)->count());
+    }
+
     public function test_non_images_are_rejected(): void
     {
         Livewire::test(Form::class)

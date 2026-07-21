@@ -14,11 +14,13 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
+use Throwable;
 
 class Form extends Component
 {
@@ -53,6 +55,10 @@ class Form extends Component
     {
         $this->validate();
 
+        // Upload before touching the database: a failed write aborts the whole
+        // save with a form error instead of an item pointing at a missing object.
+        $path = $this->photo !== null ? $this->storePhoto() : null;
+
         $item = $this->form->save();
 
         if ($this->form->item === null) {
@@ -62,7 +68,7 @@ class Form extends Component
             ]);
         }
 
-        $this->persistPhoto($item);
+        $this->applyPhoto($item, $path);
 
         session()->flash('toast', $this->form->item !== null ? 'Changes saved' : 'Item added');
 
@@ -75,20 +81,37 @@ class Form extends Component
         $this->removePhoto = true;
     }
 
-    private function persistPhoto(Item $item): void
+    private function storePhoto(): string
+    {
+        $original = $this->photo->get();
+        $shrunk = (new PhotoShrinker)->shrink($original);
+        $name = $shrunk === $original
+            ? $this->photo->hashName()
+            : pathinfo($this->photo->hashName(), PATHINFO_FILENAME).'.jpg';
+
+        $path = 'items/'.auth()->user()->current_home_id.'/'.$name;
+
+        try {
+            $written = Item::photoDisk()->put($path, $shrunk) !== false;
+        } catch (Throwable $exception) {
+            report($exception);
+            $written = false;
+        }
+
+        if (! $written) {
+            throw ValidationException::withMessages([
+                'photo' => 'The photo could not be saved. Please try again.',
+            ]);
+        }
+
+        return $path;
+    }
+
+    private function applyPhoto(Item $item, ?string $path): void
     {
         $previous = $item->photo_path;
 
-        if ($this->photo !== null) {
-            $original = $this->photo->get();
-            $shrunk = (new PhotoShrinker)->shrink($original);
-            $name = $shrunk === $original
-                ? $this->photo->hashName()
-                : pathinfo($this->photo->hashName(), PATHINFO_FILENAME).'.jpg';
-
-            $path = 'items/'.$item->home_id.'/'.$name;
-            Item::photoDisk()->put($path, $shrunk);
-
+        if ($path !== null) {
             $item->update(['photo_path' => $path]);
         } elseif ($this->removePhoto && $previous !== null) {
             $item->update(['photo_path' => null]);
