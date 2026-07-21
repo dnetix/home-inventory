@@ -99,6 +99,60 @@ class ItemPhotoTest extends TestCase
             ->assertDontSeeHtml('alt="Cordless drill"');
     }
 
+    public function test_a_photo_can_be_uploaded_from_the_item_detail_screen(): void
+    {
+        $item = Item::factory()->for($this->home)->create();
+
+        Livewire::test(Show::class, ['item' => $item])
+            ->set('detailPhoto', UploadedFile::fake()->create('snap.jpg', 128, 'image/jpeg'))
+            ->assertHasNoErrors()
+            ->assertSet('detailPhoto', null);
+
+        $item->refresh();
+
+        $this->assertNotNull($item->photo_path);
+        Storage::disk('s3')->assertExists($item->photo_path);
+    }
+
+    public function test_uploading_from_the_detail_replaces_and_deletes_the_old_photo(): void
+    {
+        $oldPath = UploadedFile::fake()->create('old.jpg', 128, 'image/jpeg')->store('items/'.$this->home->id, 's3');
+        $item = Item::factory()->for($this->home)->create(['photo_path' => $oldPath]);
+
+        Livewire::test(Show::class, ['item' => $item])
+            ->set('detailPhoto', UploadedFile::fake()->create('new.jpg', 128, 'image/jpeg'))
+            ->assertHasNoErrors();
+
+        $item->refresh();
+
+        $this->assertNotSame($oldPath, $item->photo_path);
+        Storage::disk('s3')->assertMissing($oldPath);
+        Storage::disk('s3')->assertExists($item->photo_path);
+    }
+
+    public function test_a_photo_can_be_uploaded_from_the_desktop_detail_pane(): void
+    {
+        $item = Item::factory()->for($this->home)->create();
+
+        Livewire::test(Index::class)
+            ->set('selected', $item->id)
+            ->set('detailPhoto', UploadedFile::fake()->create('snap.jpg', 128, 'image/jpeg'))
+            ->assertHasNoErrors();
+
+        $this->assertNotNull($item->fresh()->photo_path);
+    }
+
+    public function test_non_images_are_rejected_from_the_detail_screen(): void
+    {
+        $item = Item::factory()->for($this->home)->create();
+
+        Livewire::test(Show::class, ['item' => $item])
+            ->set('detailPhoto', UploadedFile::fake()->create('malware.exe', 100))
+            ->assertHasErrors(['detailPhoto']);
+
+        $this->assertNull($item->fresh()->photo_path);
+    }
+
     public function test_photos_follow_the_configured_disk(): void
     {
         config(['filesystems.photos' => 'local']);

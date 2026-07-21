@@ -21,12 +21,13 @@ use Livewire\Attributes\Session;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 #[Title('Items')]
 class Index extends Component
 {
-    use AuthorizesRequests, ManagesItemActions, SelectsItems, WithPagination;
+    use AuthorizesRequests, ManagesItemActions, SelectsItems, WithFileUploads, WithPagination;
 
     #[Url(as: 'q')]
     public string $search = '';
@@ -185,6 +186,11 @@ class Index extends Component
         return $this->selected === null
             ? null
             : Item::withRemoved()->with(['category.parent', 'place', 'tags', 'activeLend'])->find($this->selected);
+    }
+
+    protected function detailPhotoItem(): Item
+    {
+        return Item::withRemoved()->findOrFail($this->selected);
     }
 
     /**

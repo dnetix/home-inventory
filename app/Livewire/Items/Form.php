@@ -2,25 +2,23 @@
 
 namespace App\Livewire\Items;
 
+use App\Actions\StoreItemPhoto;
 use App\Livewire\Forms\ItemForm;
 use App\Models\Category;
 use App\Models\Item;
 use App\Models\Place;
 use App\Models\Tag;
-use App\Support\PhotoShrinker;
 use App\Support\PlaceTree;
 use App\Support\UnitFormatter;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
-use Throwable;
 
 class Form extends Component
 {
@@ -83,28 +81,7 @@ class Form extends Component
 
     private function storePhoto(): string
     {
-        $original = $this->photo->get();
-        $shrunk = (new PhotoShrinker)->shrink($original);
-        $name = $shrunk === $original
-            ? $this->photo->hashName()
-            : pathinfo($this->photo->hashName(), PATHINFO_FILENAME).'.jpg';
-
-        $path = 'items/'.auth()->user()->current_home_id.'/'.$name;
-
-        try {
-            $written = Item::photoDisk()->put($path, $shrunk) !== false;
-        } catch (Throwable $exception) {
-            report($exception);
-            $written = false;
-        }
-
-        if (! $written) {
-            throw ValidationException::withMessages([
-                'photo' => 'The photo could not be saved. Please try again.',
-            ]);
-        }
-
-        return $path;
+        return app(StoreItemPhoto::class)->store($this->photo, auth()->user()->current_home_id);
     }
 
     private function applyPhoto(Item $item, ?string $path): void

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Concerns;
 
+use App\Actions\StoreItemPhoto;
 use App\Enums\ItemStatus;
 use App\Models\Item;
 use App\Models\Lend;
@@ -10,11 +11,13 @@ use App\Support\FitChecker;
 use App\Support\FitResult;
 use App\Support\PlaceTree;
 use Livewire\Attributes\Computed;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 /**
  * Item actions shared by the Items index (desktop detail pane) and the
- * full item detail screen: mark a lend returned, change the status, and
- * the transfer flow with its "will it fit?" verdict.
+ * full item detail screen: mark a lend returned, change the status,
+ * add/replace the photo, and the transfer flow with its "will it fit?"
+ * verdict. Host components must also use WithFileUploads.
  */
 trait ManagesItemActions
 {
@@ -23,6 +26,36 @@ trait ManagesItemActions
     public ?int $transferPlaceId = null;
 
     public ?int $statusItemId = null;
+
+    public ?TemporaryUploadedFile $detailPhoto = null;
+
+    public function updatedDetailPhoto(): void
+    {
+        $this->validate(['detailPhoto' => ['required', 'image', 'max:8192']]);
+
+        $item = $this->detailPhotoItem();
+
+        $this->authorize('update', $item);
+
+        $previous = $item->photo_path;
+        $path = app(StoreItemPhoto::class)->store($this->detailPhoto, $item->home_id, 'detailPhoto');
+
+        $item->update(['photo_path' => $path]);
+
+        if ($previous !== null && $previous !== $path) {
+            Item::photoDisk()->delete($previous);
+        }
+
+        $this->detailPhoto = null;
+        $this->refreshBoundItem();
+
+        $this->dispatch('toast', message: $previous === null ? 'Photo added' : 'Photo replaced');
+    }
+
+    /**
+     * The item the detail view currently shows — the target for photo uploads.
+     */
+    abstract protected function detailPhotoItem(): Item;
 
     public function returnLend(int $lendId): void
     {

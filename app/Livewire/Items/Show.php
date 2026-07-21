@@ -12,14 +12,20 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class Show extends Component
 {
-    use AuthorizesRequests, ManagesItemActions;
+    use AuthorizesRequests, ManagesItemActions, WithFileUploads;
 
     public Item $item;
 
     public bool $menuOpen = false;
+
+    protected function detailPhotoItem(): Item
+    {
+        return $this->item;
+    }
 
     public function mount(Item $item): void
     {

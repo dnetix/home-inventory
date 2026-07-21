@@ -17,15 +17,29 @@
         </div>
     @endif
 
-    @if ($item->photo_path)
-        <img src="{{ $item->photoUrl() }}" alt="{{ $item->name }}"
-            class="h-[188px] w-full rounded-[18px] border border-line object-cover">
-    @else
-        <a href="{{ route('items.edit', $item) }}" wire:navigate class="block">
-            <x-ui.ph class="h-[188px] w-full rounded-[18px]" :icon="$item->category?->glyph ?? 'box'"
-                :tint="$item->category?->color" :icon-size="52" label="tap to add a photo" />
-        </a>
-    @endif
+    {{-- Photo: tap to add or replace right from the detail view --}}
+    <div x-data>
+        <input type="file" accept="image/*" x-ref="detailFile" class="hidden"
+            x-on:change="$event.target.files[0] && window.shrinkPhoto($event.target.files[0]).then((file) => { $wire.upload('detailPhoto', file); $refs.detailFile.value = '' })">
+        <button type="button" x-on:click="$refs.detailFile.click()"
+            class="relative block w-full cursor-pointer overflow-hidden rounded-[18px]">
+            @if ($item->photo_path)
+                <img src="{{ $item->photoUrl() }}" alt="{{ $item->name }}"
+                    class="h-[188px] w-full rounded-[18px] border border-line object-cover">
+                <span class="absolute right-2.5 bottom-2.5 flex size-9 items-center justify-center rounded-full border border-line bg-surface text-ink-2 shadow-sm">
+                    <x-icon name="camera" :size="17" />
+                </span>
+            @else
+                <x-ui.ph class="h-[188px] w-full rounded-[18px]" :icon="$item->category?->glyph ?? 'box'"
+                    :tint="$item->category?->color" :icon-size="52" label="tap to add a photo" />
+            @endif
+            <span wire:loading wire:target="detailPhoto"
+                class="absolute inset-0 flex items-center justify-center rounded-[18px] bg-[rgba(8,10,15,0.45)] text-[12px] font-bold text-white">
+                Uploading…
+            </span>
+        </button>
+        @error('detailPhoto')<p class="mt-1.5 text-[13px] font-semibold text-bad">{{ $message }}</p>@enderror
+    </div>
 
     <div class="mt-4 flex items-start gap-3">
         <div class="min-w-0 flex-1">
