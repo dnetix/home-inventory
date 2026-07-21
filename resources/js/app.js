@@ -56,10 +56,30 @@ document.addEventListener('alpine:init', () => {
     }));
 });
 
-// Cmd/Ctrl+K opens the Find screen from anywhere.
+// Search lives on the items list. Cmd/Ctrl+K (and the search buttons, via
+// the __focusItemsSearch flag) focus the visible search input, navigating
+// there first when needed.
+const focusItemsSearch = () => {
+    const input = [...document.querySelectorAll('[data-items-search]')].find((el) => el.offsetParent !== null);
+    input?.focus();
+
+    return Boolean(input);
+};
+
 document.addEventListener('keydown', (event) => {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
-        window.Livewire ? window.Livewire.navigate('/find') : window.location.assign('/find');
+
+        if (!focusItemsSearch()) {
+            window.__focusItemsSearch = true;
+            window.Livewire ? window.Livewire.navigate('/items') : window.location.assign('/items');
+        }
+    }
+});
+
+document.addEventListener('livewire:navigated', () => {
+    if (window.__focusItemsSearch) {
+        window.__focusItemsSearch = false;
+        focusItemsSearch();
     }
 });

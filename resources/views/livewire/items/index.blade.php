@@ -1,10 +1,11 @@
 @php
     $missingMeta = \App\Livewire\Items\Index::MISSING_META;
     $statusFilters = \App\Livewire\Items\Index::STATUS_FILTERS;
-    $filtering = $missing !== '' || $status !== '' || $tag !== null;
+    $filtering = $missing !== '' || $status !== '' || $tag !== null || $cat !== null;
 @endphp
 
-<div class="mx-auto flex w-full flex-1 flex-col lg:max-w-none" x-data="itemSelection($wire.entangle('selectedIds'))">
+<div class="mx-auto flex w-full flex-1 flex-col lg:max-w-none" x-data="itemSelection($wire.entangle('selectedIds'))"
+    x-on:scroll.window.passive="document.activeElement?.type === 'search' && document.activeElement.blur()">
     {{-- Header (mobile — desktop heading + actions live in the top bar) --}}
     <div class="flex items-end justify-between gap-3 px-5 pt-8 lg:hidden">
         <div>
@@ -14,9 +15,6 @@
             </p>
         </div>
         <div class="flex items-center gap-2">
-            <a href="{{ route('find') }}" wire:navigate>
-                <x-ui.icon-btn icon="search" />
-            </a>
             <x-ui.icon-btn icon="check-circle" :accent="$selecting" wire:click="toggleSelecting" />
             <x-ui.icon-btn icon="sliders" :accent="$filtering" wire:click="$set('filterOpen', true)" />
         </div>
@@ -43,15 +41,20 @@
         </div>
     @endteleport
 
-    {{-- Category filter --}}
-    <div class="px-5 py-3 lg:w-[420px] lg:px-[30px]">
-        <x-category-combobox :categories="$this->categories" property="cat" null-label="All categories" live />
+    {{-- Search (mobile — pinned; the desktop input teleports into the top bar) --}}
+    <div class="sticky top-0 z-30 bg-screen px-5 py-3 lg:hidden">
+        @include('livewire.items.partials.search-input')
     </div>
+
+    @teleport('#topbar-search')
+        @include('livewire.items.partials.search-input')
+    @endteleport
 
     {{-- Active filter banner (data-quality + status) --}}
     @if ($filtering)
         @php
             $filterLabels = array_filter([
+                $cat !== null ? $this->categories->firstWhere('id', $cat)?->label : null,
                 $missingMeta[$missing]['label'] ?? null,
                 $statusFilters[$status] ?? null,
                 $tag !== null ? '#'.$this->tags->firstWhere('id', $tag)?->label : null,
@@ -261,7 +264,10 @@
     {{-- Filter sheet: data-quality + status --}}
     @if ($filterOpen)
         <x-ui.sheet title="Show items" close="closeFilter">
-            <x-ui.section-label class="mb-1">Tags</x-ui.section-label>
+            <x-ui.section-label class="mb-2">Category</x-ui.section-label>
+            <x-category-combobox :categories="$this->categories" property="cat" null-label="All categories" live />
+
+            <x-ui.section-label class="mt-5 mb-1">Tags</x-ui.section-label>
             <div class="flex items-center gap-3 border-b border-line py-[13px]">
                 <span class="flex-1">
                     <span class="block text-[15px] font-semibold">Show tags</span>

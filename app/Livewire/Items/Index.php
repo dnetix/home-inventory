@@ -133,6 +133,7 @@ class Index extends Component
         $this->missing = '';
         $this->status = '';
         $this->tag = null;
+        $this->cat = null;
         $this->resetPage();
     }
 

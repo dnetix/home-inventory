@@ -67,13 +67,16 @@
         {{-- Desktop top bar: page heading (teleported per screen) + global search + page actions + add item --}}
         <header class="sticky top-0 z-30 hidden min-h-[62px] items-center gap-4 border-b border-line bg-screen px-[30px] py-2.5 lg:flex">
             <div id="topbar-page" class="min-w-0 shrink-0 empty:hidden"></div>
-            {{-- On /find the real search input teleports into #topbar-page instead --}}
-            @unless (request()->routeIs('find'))
-                <a href="{{ route('find') }}" wire:navigate
+            {{-- On the items list the real search input teleports in here; elsewhere
+                 the placeholder button navigates there and focuses it (app.js flag) --}}
+            <div id="topbar-search" class="w-full max-w-[400px] empty:hidden"></div>
+            @unless (request()->routeIs('items.index'))
+                <a href="{{ route('items.index') }}" wire:navigate x-data
+                    x-on:click="window.__focusItemsSearch = true"
                     class="flex min-h-[42px] w-full max-w-[400px] items-center gap-2.5 rounded-[13px] border border-line-2 bg-surface px-3.5 text-ink-3 transition hover:text-ink-2 hover:shadow-sm">
                     <x-icon name="search" :size="17" :stroke="1.9" class="shrink-0" />
                     <span class="flex-1 truncate text-left text-[14.5px] font-medium">Search items, places, tags…</span>
-                    <kbd x-data x-text="navigator.platform.includes('Mac') ? '⌘ K' : 'Ctrl K'"
+                    <kbd x-text="navigator.platform.includes('Mac') ? '⌘ K' : 'Ctrl K'"
                         class="rounded-[7px] border border-line-2 bg-fill px-1.5 py-0.5 font-sans text-[11px] font-semibold whitespace-nowrap text-ink-3"></kbd>
                 </a>
             @endunless

@@ -44,7 +44,7 @@
     "src": "node_modules/@fontsource-variable/hanken-grotesk/files/hanken-grotesk-vietnamese-wght-normal.woff2"
   },
   "resources/css/app.css": {
-    "file": "assets/app-DX3xW04l.css",
+    "file": "assets/app-BLgOGxo8.css",
     "name": "app",
     "names": [
       "app.css"
@@ -59,7 +59,7 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-Dy9AYhA1.js",
+    "file": "assets/app-Ba00loZ1.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true

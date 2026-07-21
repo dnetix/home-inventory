@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Enums\ItemStatus;
-use App\Livewire\Items\Find;
 use App\Livewire\Items\Form;
 use App\Livewire\Items\Index;
 use App\Livewire\Items\Show;
@@ -487,11 +486,11 @@ class ItemsTest extends TestCase
         $this->assertNull($foreign->fresh()->place_id);
     }
 
-    public function test_batch_status_works_from_the_find_screen(): void
+    public function test_batch_status_works_while_searching(): void
     {
         $item = Item::factory()->for($this->home)->create(['name' => 'Cordless drill']);
 
-        Livewire::test(Find::class)
+        Livewire::test(Index::class)
             ->set('search', 'drill')
             ->call('toggleSelecting')
             ->call('toggleSelected', $item->id)
@@ -501,13 +500,13 @@ class ItemsTest extends TestCase
         $this->assertSame(ItemStatus::Broken, $item->fresh()->status);
     }
 
-    public function test_find_results_show_the_status_pill(): void
+    public function test_search_results_show_the_status_pill(): void
     {
         Item::factory()->for($this->home)->missing()->create(['name' => 'Cordless drill']);
         $lentItem = Item::factory()->for($this->home)->create(['name' => 'Cordless sander']);
         Lend::factory()->for($this->home)->for($lentItem)->create();
 
-        Livewire::test(Find::class)
+        Livewire::test(Index::class)
             ->set('search', 'cordless')
             ->assertSee('missing')
             ->assertSee('lent');

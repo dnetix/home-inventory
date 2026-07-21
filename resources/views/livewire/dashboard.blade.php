@@ -37,7 +37,8 @@
 
     <div class="flex-1 px-5 pt-3 pb-6 lg:px-[30px] lg:pb-[30px]">
         {{-- Search (mobile) --}}
-        <a href="{{ route('find') }}" wire:navigate
+        <a href="{{ route('items.index') }}" wire:navigate x-data
+            x-on:click="window.__focusItemsSearch = true"
             class="mb-4 flex min-h-[50px] items-center gap-2.5 rounded-2xl bg-fill px-3.5 lg:hidden">
             <x-icon name="search" :size="19" :stroke="1.9" class="text-ink-3" />
             <span class="flex-1 text-[15.5px] font-medium text-ink-3">Search your home…</span>
