@@ -17,6 +17,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Item Photo Disk
+    |--------------------------------------------------------------------------
+    |
+    | The disk holding item photos. "s3" (MinIO/AWS) serves them straight from
+    | the object store via presigned URLs; "local" keeps them on this server
+    | and serves them through Laravel's signed storage route — use it where no
+    | object store is available.
+    |
+    */
+
+    'photos' => env('PHOTO_DISK', 's3'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |

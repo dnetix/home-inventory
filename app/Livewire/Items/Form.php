@@ -13,7 +13,6 @@ use App\Support\UnitFormatter;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Validate;
@@ -88,7 +87,7 @@ class Form extends Component
                 : pathinfo($this->photo->hashName(), PATHINFO_FILENAME).'.jpg';
 
             $path = 'items/'.$item->home_id.'/'.$name;
-            Storage::disk('s3')->put($path, $shrunk);
+            Item::photoDisk()->put($path, $shrunk);
 
             $item->update(['photo_path' => $path]);
         } elseif ($this->removePhoto && $previous !== null) {
@@ -98,7 +97,7 @@ class Form extends Component
         }
 
         if ($previous !== null && $previous !== $item->photo_path) {
-            Storage::disk('s3')->delete($previous);
+            Item::photoDisk()->delete($previous);
         }
     }
 

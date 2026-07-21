@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
@@ -35,9 +36,18 @@ class Item extends Model
 
         static::deleting(function (Item $item): void {
             if ($item->photo_path !== null) {
-                Storage::disk('s3')->delete($item->photo_path);
+                self::photoDisk()->delete($item->photo_path);
             }
         });
+    }
+
+    /**
+     * The disk item photos live on — s3/MinIO by default, switchable to any
+     * temporaryUrl-capable disk via PHOTO_DISK for object-store-less installs.
+     */
+    public static function photoDisk(): FilesystemAdapter
+    {
+        return Storage::disk(config('filesystems.photos'));
     }
 
     /**
@@ -137,9 +147,9 @@ class Item extends Model
         }
 
         return Cache::remember(
-            'photo-url:'.$this->photo_path,
+            'photo-url:'.config('filesystems.photos').':'.$this->photo_path,
             now()->addMinutes(20),
-            fn (): string => Storage::disk('s3')->temporaryUrl($this->photo_path, now()->addMinutes(30)),
+            fn (): string => self::photoDisk()->temporaryUrl($this->photo_path, now()->addMinutes(30)),
         );
     }
 }

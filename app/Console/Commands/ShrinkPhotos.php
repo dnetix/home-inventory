@@ -6,7 +6,6 @@ use App\Models\Home;
 use App\Models\Item;
 use App\Support\PhotoShrinker;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Storage;
 
 class ShrinkPhotos extends Command
 {
@@ -16,7 +15,7 @@ class ShrinkPhotos extends Command
 
     public function handle(PhotoShrinker $shrinker): int
     {
-        $disk = Storage::disk('s3');
+        $disk = Item::photoDisk();
         $shrunk = 0;
         $untouched = 0;
 

@@ -99,6 +99,27 @@ class ItemPhotoTest extends TestCase
             ->assertDontSeeHtml('alt="Cordless drill"');
     }
 
+    public function test_photos_follow_the_configured_disk(): void
+    {
+        config(['filesystems.photos' => 'local']);
+        Storage::fake('local');
+
+        Livewire::test(Form::class)
+            ->set('form.name', 'Cordless drill')
+            ->set('photo', UploadedFile::fake()->create('drill.jpg', 128, 'image/jpeg'))
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $item = Item::forHome($this->home)->firstOrFail();
+
+        Storage::disk('local')->assertExists($item->photo_path);
+        Storage::disk('s3')->assertMissing($item->photo_path);
+
+        Livewire::test(Show::class, ['item' => $item])->call('delete');
+
+        Storage::disk('local')->assertMissing($item->photo_path);
+    }
+
     public function test_non_images_are_rejected(): void
     {
         Livewire::test(Form::class)
