@@ -268,6 +268,65 @@ class ItemsTest extends TestCase
         $this->assertSame('New name', $item->fresh()->name);
     }
 
+    public function test_form_saves_a_warranty_date_shown_active_on_the_detail(): void
+    {
+        Livewire::test(Form::class)
+            ->set('form.name', 'Espresso machine')
+            ->set('form.warrantyUntil', today()->addYear()->toDateString())
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $item = Item::forHome($this->home)->firstOrFail();
+
+        $this->assertSame(today()->addYear()->toDateString(), $item->warranty_until->toDateString());
+
+        Livewire::test(Show::class, ['item' => $item])
+            ->assertSee(today()->addYear()->format('Y-m-d'))
+            ->assertSee('active');
+    }
+
+    public function test_an_expired_warranty_shows_as_expired(): void
+    {
+        $item = Item::factory()->for($this->home)->create(['warranty_until' => today()->subMonth()]);
+
+        Livewire::test(Show::class, ['item' => $item])
+            ->assertSee(today()->subMonth()->format('Y-m-d'))
+            ->assertSee('expired');
+    }
+
+    public function test_an_upkeep_task_can_be_created_from_the_item_view(): void
+    {
+        $item = Item::factory()->for($this->home)->create(['name' => 'Wi-Fi router']);
+
+        Livewire::test(Show::class, ['item' => $item])
+            ->call('startUpkeep', $item->id)
+            ->set('upkeepForm.task', 'Restart & update')
+            ->set('upkeepForm.dueDate', today()->addWeek()->toDateString())
+            ->set('upkeepForm.every', 'P1M')
+            ->call('saveUpkeep')
+            ->assertHasNoErrors()
+            ->assertSet('upkeepItemId', null);
+
+        $task = \App\Models\UpkeepTask::forHome($this->home)->firstOrFail();
+
+        $this->assertSame($item->id, $task->item_id);
+        $this->assertSame('Wi-Fi router', $task->subject);
+        $this->assertSame('P1M', $task->every);
+    }
+
+    public function test_the_item_upkeep_sheet_can_be_cancelled_without_saving(): void
+    {
+        $item = Item::factory()->for($this->home)->create();
+
+        Livewire::test(Show::class, ['item' => $item])
+            ->call('startUpkeep', $item->id)
+            ->set('upkeepForm.task', 'Never mind')
+            ->call('cancelUpkeep')
+            ->assertSet('upkeepItemId', null);
+
+        $this->assertSame(0, \App\Models\UpkeepTask::forHome($this->home)->count());
+    }
+
     public function test_show_renders_and_deletes(): void
     {
         $item = Item::factory()->for($this->home)->create(['name' => 'Camping tent']);

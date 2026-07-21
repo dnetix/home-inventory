@@ -4,9 +4,11 @@ namespace App\Livewire\Concerns;
 
 use App\Actions\StoreItemPhoto;
 use App\Enums\ItemStatus;
+use App\Livewire\Forms\UpkeepTaskForm;
 use App\Models\Item;
 use App\Models\Lend;
 use App\Models\Place;
+use App\Models\UpkeepTask;
 use App\Support\FitChecker;
 use App\Support\FitResult;
 use App\Support\PlaceTree;
@@ -28,6 +30,47 @@ trait ManagesItemActions
     public ?int $statusItemId = null;
 
     public ?TemporaryUploadedFile $detailPhoto = null;
+
+    public UpkeepTaskForm $upkeepForm;
+
+    public ?int $upkeepItemId = null;
+
+    public function startUpkeep(int $itemId): void
+    {
+        $item = Item::findOrFail($itemId);
+
+        $this->authorize('create', UpkeepTask::class);
+
+        $this->upkeepForm->reset();
+        $this->upkeepForm->resetValidation();
+        $this->upkeepForm->itemId = $item->id;
+        $this->upkeepItemId = $item->id;
+    }
+
+    public function cancelUpkeep(): void
+    {
+        $this->upkeepItemId = null;
+        $this->upkeepForm->reset();
+        $this->upkeepForm->resetValidation();
+    }
+
+    public function saveUpkeep(): void
+    {
+        $this->authorize('create', UpkeepTask::class);
+
+        $this->upkeepForm->itemId = $this->upkeepItemId;
+        $this->upkeepForm->save();
+
+        $this->cancelUpkeep();
+
+        $this->dispatch('toast', message: 'Upkeep task added');
+    }
+
+    #[Computed]
+    public function upkeepItem(): ?Item
+    {
+        return $this->upkeepItemId === null ? null : Item::withRemoved()->find($this->upkeepItemId);
+    }
 
     public function updatedDetailPhoto(): void
     {

@@ -5,7 +5,6 @@ namespace App\Livewire\Upkeep;
 use App\Actions\CompleteUpkeepTask;
 use App\Enums\UpkeepStatus;
 use App\Livewire\Forms\UpkeepTaskForm;
-use App\Models\Item;
 use App\Models\UpkeepLog;
 use App\Models\UpkeepTask;
 use Illuminate\Contracts\View\View;
@@ -215,15 +214,6 @@ class Index extends Component
             ->latest('id')
             ->limit(6)
             ->get();
-    }
-
-    /**
-     * @return Collection<int, Item>
-     */
-    #[Computed]
-    public function items(): Collection
-    {
-        return Item::query()->orderBy('name')->get();
     }
 
     public function render(): View

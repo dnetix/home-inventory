@@ -18,6 +18,8 @@ class ItemForm extends Form
 
     public string $note = '';
 
+    public string $warrantyUntil = '';
+
     public ?int $categoryId = null;
 
     public ?int $placeId = null;
@@ -51,6 +53,7 @@ class ItemForm extends Form
         return [
             'name' => ['required', 'string', 'max:120'],
             'note' => ['nullable', 'string', 'max:255'],
+            'warrantyUntil' => ['nullable', 'date'],
             'categoryId' => ['nullable', Rule::exists('categories', 'id')->where('home_id', $homeId)],
             'placeId' => ['nullable', Rule::exists('places', 'id')->where('home_id', $homeId)],
             'qty' => ['required', 'integer', 'min:1', 'max:99999'],
@@ -71,6 +74,7 @@ class ItemForm extends Form
         return [
             'categoryId' => 'category',
             'placeId' => 'location',
+            'warrantyUntil' => 'warranty date',
             'w' => 'width',
             'h' => 'height',
             'd' => 'depth',
@@ -84,6 +88,7 @@ class ItemForm extends Form
         $this->item = $item;
         $this->name = $item->name;
         $this->note = (string) $item->note;
+        $this->warrantyUntil = $item->warranty_until?->toDateString() ?? '';
         $this->categoryId = $item->category_id;
         $this->placeId = $item->place_id;
         $this->qty = (string) $item->qty;
@@ -106,6 +111,7 @@ class ItemForm extends Form
         $attributes = [
             'name' => trim($this->name),
             'note' => trim($this->note) ?: null,
+            'warranty_until' => $this->warrantyUntil === '' ? null : $this->warrantyUntil,
             'category_id' => $this->categoryId,
             'place_id' => $this->placeId,
             'qty' => (int) $this->qty,

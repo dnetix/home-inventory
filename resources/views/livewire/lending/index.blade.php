@@ -45,7 +45,7 @@
                                     class="block truncate text-[15px] font-semibold">{{ $lend->item->name }}</a>
                                 <div class="mt-[3px] flex items-center gap-[5px] text-xs font-semibold text-ink-3">
                                     <x-icon name="user" :size="13" :stroke="1.9" />
-                                    {{ $lend->person }} · since {{ $lend->out_date->format('M j') }}
+                                    {{ $lend->person }} · since {{ $lend->out_date->format('Y-m-d') }}
                                 </div>
                             </div>
                             <div class="flex flex-col items-end gap-1.5">
@@ -56,7 +56,7 @@
                                 @elseif ($lend->isOverdue())
                                     <x-ui.pill variant="bad">overdue</x-ui.pill>
                                 @else
-                                    <x-ui.pill variant="good">{{ $lend->due_date ? 'due '.$lend->due_date->format('M j') : 'no date' }}</x-ui.pill>
+                                    <x-ui.pill variant="good">{{ $lend->due_date ? 'due '.$lend->due_date->format('Y-m-d') : 'no date' }}</x-ui.pill>
                                 @endif
                                 @if (! $lend->returned_at)
                                     <button type="button" wire:click="returnLend({{ $lend->id }})"
@@ -155,7 +155,7 @@
                         <x-ui.field label="Due back" name="form.dueDate" icon="calendar" type="date"
                             wire:model.live="form.dueDate" />
                         <p class="mt-2 text-xs font-medium text-ink-3">
-                            {{ $form->dueDate !== '' ? 'Should be returned by '.\Illuminate\Support\Carbon::parse($form->dueDate)->format('M j') : 'Leave empty for no return date' }}
+                            {{ $form->dueDate !== '' ? 'Should be returned by '.\Illuminate\Support\Carbon::parse($form->dueDate)->format('Y-m-d') : 'Leave empty for no return date' }}
                         </p>
                     </div>
 

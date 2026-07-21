@@ -82,7 +82,7 @@
                 <div class="text-[13.5px] font-bold">Lent to {{ $lend->person }}</div>
                 <div class="mt-px text-[12px] font-semibold opacity-80">
                     @if ($lend->due_date)
-                        Due back {{ $lend->due_date->format('M j') }}{{ $lend->isOverdue() ? ' · overdue' : '' }}
+                        Due back {{ $lend->due_date->format('Y-m-d') }}{{ $lend->isOverdue() ? ' · overdue' : '' }}
                     @else
                         No due date
                     @endif
@@ -152,7 +152,16 @@
             <x-icon name="shield" :size="18" class="shrink-0 text-ink-3" />
             <span class="w-[82px] shrink-0 text-[13.5px] font-semibold text-ink-2">Warranty</span>
             <span class="flex-1 text-right text-[13.5px] font-semibold">
-                {{ $item->tags->contains('label', 'warranty') ? 'Active' : '—' }}
+                @if ($item->warranty_until)
+                    {{ $item->warranty_until->format('Y-m-d') }}
+                    @if ($item->warranty_until->isPast() && ! $item->warranty_until->isToday())
+                        <span class="font-bold text-bad">· expired</span>
+                    @else
+                        <span class="font-bold text-good">· active</span>
+                    @endif
+                @else
+                    <span class="text-ink-4">—</span>
+                @endif
             </span>
         </div>
     </x-ui.card>
@@ -161,8 +170,13 @@
         <x-ui.btn variant="ghost" size="sm" class="flex-1" wire:click="startTransfer({{ $item->id }})">
             <x-icon name="map-pin" :size="16" /> Transfer
         </x-ui.btn>
-        <x-ui.btn variant="primary" size="sm" class="flex-1 opacity-50" disabled title="Upkeep arrives in the next phase">
+        <x-ui.btn variant="primary" size="sm" class="flex-1" wire:click="startUpkeep({{ $item->id }})">
             <x-icon name="wrench" :size="16" /> Upkeep
         </x-ui.btn>
     </div>
+
+    {{-- New-upkeep-task sheet (stays on this page) --}}
+    @if ($this->upkeepItem)
+        @include('livewire.items.partials.upkeep-sheet')
+    @endif
 </div>

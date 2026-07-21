@@ -8,7 +8,7 @@
     <div class="flex items-end justify-between gap-3 px-5 pt-8 lg:hidden">
         <div>
             <h1 class="text-[30px] font-extrabold tracking-[-0.4px]">Home</h1>
-            <p class="mt-[3px] text-[13.5px] font-medium text-ink-2">{{ today()->format('l, F j') }}</p>
+            <p class="mt-[3px] text-[13.5px] font-medium text-ink-2">{{ today()->format('l, Y-m-d') }}</p>
         </div>
         <a href="{{ route('upkeep.index') }}" wire:navigate class="relative">
             <x-ui.icon-btn icon="bell" />
@@ -21,7 +21,7 @@
     </div>
 
     @teleport('#topbar-page')
-        <x-topbar-heading title="Home" :subtitle="today()->format('l, F j')" />
+        <x-topbar-heading title="Home" :subtitle="today()->format('l, Y-m-d')" />
     @endteleport
 
     @teleport('#topbar-actions')
@@ -191,7 +191,7 @@
                                     @if ($lend->isOverdue())
                                         <x-ui.pill variant="bad">overdue</x-ui.pill>
                                     @elseif ($lend->due_date)
-                                        <span class="text-xs font-semibold text-ink-3">{{ $lend->due_date->format('M j') }}</span>
+                                        <span class="text-xs font-semibold text-ink-3">{{ $lend->due_date->format('Y-m-d') }}</span>
                                     @endif
                                 </a>
                             @endforeach

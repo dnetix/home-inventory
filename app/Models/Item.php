@@ -18,7 +18,7 @@ use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
-#[Fillable(['name', 'category_id', 'place_id', 'value', 'qty', 'dim', 'note', 'photo_path', 'status'])]
+#[Fillable(['name', 'category_id', 'place_id', 'value', 'qty', 'dim', 'note', 'warranty_until', 'photo_path', 'status'])]
 class Item extends Model
 {
     use BelongsToHome;
@@ -70,6 +70,7 @@ class Item extends Model
             'value' => Money::class,
             'qty' => 'integer',
             'status' => ItemStatus::class,
+            'warranty_until' => 'date',
         ];
     }
 

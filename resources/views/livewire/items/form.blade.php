@@ -142,9 +142,17 @@
                 </div>
             @endif
 
-            {{-- Value --}}
-            <x-ui.field label="Approx. value" name="form.value" icon="star" inputmode="decimal" placeholder="0"
-                wire:model="form.value" />
+            {{-- Value + warranty --}}
+            <div class="flex gap-3">
+                <div class="min-w-0 flex-1">
+                    <x-ui.field label="Approx. value" name="form.value" icon="star" inputmode="decimal" placeholder="0"
+                        wire:model="form.value" />
+                </div>
+                <div class="min-w-0 flex-1">
+                    <x-ui.field label="Warranty until" name="form.warrantyUntil" icon="shield" type="date"
+                        wire:model="form.warrantyUntil" />
+                </div>
+            </div>
         </div>
 
         <x-ui.btn variant="primary" class="mt-[26px] w-full {{ trim($form->name) === '' ? 'opacity-50' : '' }}"

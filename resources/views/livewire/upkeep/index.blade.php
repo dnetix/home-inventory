@@ -128,19 +128,16 @@
     @if ($editorOpen)
         <x-ui.sheet :title="$form->upkeepTask !== null ? 'Edit task' : 'New task'" close="closeEditor">
             <div class="flex flex-col gap-4">
-                <div>
-                    <div class="mb-[7px] text-[12.5px] font-bold text-ink-2">Linked item</div>
-                    <select wire:model.live="form.itemId"
-                        class="min-h-[50px] w-full cursor-pointer rounded-btn border border-line-2 bg-surface px-3.5 text-[15.5px] font-medium text-ink outline-none focus:border-accent">
-                        <option value="">Not linked — free subject</option>
-                        @foreach ($this->items as $item)
-                            <option value="{{ $item->id }}">{{ $item->name }}</option>
-                        @endforeach
-                    </select>
-                    @error('form.itemId')<p class="mt-1.5 text-[13px] font-semibold text-bad">{{ $message }}</p>@enderror
-                </div>
-
-                @if ($form->itemId === null || $form->itemId === '')
+                @if ($form->itemId !== null)
+                    {{-- Linked tasks are created from the item's own page; the link is fixed here --}}
+                    <div>
+                        <div class="mb-[7px] text-[12.5px] font-bold text-ink-2">Linked item</div>
+                        <div class="flex min-h-[50px] items-center gap-2.5 rounded-btn border border-line-2 bg-fill px-3.5">
+                            <x-icon name="box" :size="18" class="shrink-0 text-ink-3" />
+                            <span class="flex-1 truncate text-[15px] font-semibold">{{ $form->upkeepTask?->subject }}</span>
+                        </div>
+                    </div>
+                @else
                     <x-ui.field label="Subject" name="form.subject" icon="wrench" placeholder="e.g. Furnace" required
                         wire:model="form.subject" />
                 @endif
@@ -201,7 +198,7 @@
                 <span class="flex-1">
                     <span class="block text-[13.5px] font-semibold">{{ $this->completingTask->task }}</span>
                     <span class="block text-xs font-medium text-ink-3">
-                        {{ $this->completingTask->subject }} · was due {{ $this->completingTask->due_date?->format('M j') }}
+                        {{ $this->completingTask->subject }} · was due {{ $this->completingTask->due_date?->format('Y-m-d') }}
                     </span>
                 </span>
             </div>
@@ -233,7 +230,7 @@
                 <div class="mb-1 flex items-center gap-2 text-[13.5px] font-medium text-ink-2">
                     <x-icon name="clock" :size="16" :stroke="1.8" />
                     Next service →
-                    <b class="text-ink">{{ $this->completionDate()->add($this->completingTask->recurrence())->format('M j, Y') }}</b>
+                    <b class="text-ink">{{ $this->completionDate()->add($this->completingTask->recurrence())->format('Y-m-d') }}</b>
                 </div>
             @endif
 
