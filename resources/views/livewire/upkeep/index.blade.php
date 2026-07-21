@@ -26,10 +26,10 @@
         </x-ui.btn>
     @endteleport
 
-    <div class="grid flex-1 gap-[18px] px-5 pt-1 pb-6 lg:grid-cols-[1fr_360px] lg:px-[30px] lg:pt-4 lg:pb-[30px]">
-        <div class="min-w-0">
-            {{-- Month calendar --}}
-            <x-ui.card class="mb-[22px] px-4 pt-3.5 pb-4">
+    <div class="grid flex-1 items-start gap-[18px] px-5 pt-1 pb-6 lg:grid-cols-[3fr_1fr] lg:px-[30px] lg:pt-4 lg:pb-[30px]">
+        {{-- Month calendar (mobile top; desktop right rail at 1/4 width) --}}
+        <div class="min-w-0 lg:col-start-2 lg:row-start-1">
+            <x-ui.card class="px-4 pt-3.5 pb-4">
                 <div class="mb-3 flex items-center justify-between">
                     <button type="button" wire:click="previousMonth" class="cursor-pointer p-1 text-ink-3">
                         <x-icon name="chevron-left" :size="18" />
@@ -61,14 +61,10 @@
                     <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-good"></span> done</span>
                 </div>
             </x-ui.card>
-
-            {{-- Recently done (desktop keeps it under the calendar) --}}
-            <div class="hidden lg:block">
-                @include('livewire.upkeep.partials.done-log')
-            </div>
         </div>
 
-        <div class="min-w-0">
+        {{-- Upcoming + recently done (desktop main 3/4 column) --}}
+        <div class="min-w-0 lg:col-start-1 lg:row-start-1">
             {{-- Upcoming agenda --}}
             <x-ui.section-label class="mb-3">Upcoming</x-ui.section-label>
             @if ($this->agenda->isEmpty())
@@ -105,7 +101,13 @@
                             <span class="min-w-0 flex-1">
                                 <span class="block truncate text-[15px] font-semibold">{{ $task->task }}</span>
                                 <span class="mt-0.5 block truncate text-xs font-medium text-ink-3">
-                                    {{ $task->subject }}{{ $task->every ? ' · '.strtolower(UpkeepTaskForm::RECURRENCES[$task->every] ?? '') : '' }}
+                                    @if ($task->item_id)
+                                        <a href="{{ route('items.show', $task->item_id) }}" wire:navigate x-data x-on:click.stop
+                                            class="font-semibold text-accent transition hover:underline">{{ $task->subject }}</a>
+                                    @else
+                                        {{ $task->subject }}
+                                    @endif
+                                    {{ $task->every ? '· '.strtolower(UpkeepTaskForm::RECURRENCES[$task->every] ?? '') : '' }}
                                 </span>
                             </span>
                             <button type="button" wire:click.stop="startCompleting({{ $task->id }})"
@@ -117,10 +119,8 @@
                 </div>
             @endif
 
-            {{-- Recently done (mobile position) --}}
-            <div class="lg:hidden">
-                @include('livewire.upkeep.partials.done-log')
-            </div>
+            {{-- Recently done --}}
+            @include('livewire.upkeep.partials.done-log')
         </div>
     </div>
 

@@ -40,6 +40,17 @@ class UpkeepTest extends TestCase
             ->assertSee(today()->format('F Y'));
     }
 
+    public function test_the_agenda_links_the_subject_to_the_linked_item(): void
+    {
+        $item = Item::factory()->for($this->home)->create(['name' => 'Air compressor']);
+        UpkeepTask::factory()->for($this->home)->for($item)->overdue()->create(['subject' => 'Air compressor']);
+        UpkeepTask::factory()->for($this->home)->overdue()->create(['subject' => 'Furnace', 'item_id' => null]);
+
+        Livewire::test(Index::class)
+            ->assertSeeHtml(route('items.show', $item))
+            ->assertSee('Furnace');
+    }
+
     public function test_a_task_linked_to_an_item_snapshots_its_name(): void
     {
         $item = Item::factory()->for($this->home)->create(['name' => 'Wi-Fi router']);
