@@ -124,7 +124,7 @@
                         @endif
                         <x-item-thumb class="size-[42px] rounded-[10px]" :item="$item" :icon-size="18" />
                         <div class="min-w-0 flex-1">
-                            <div class="truncate text-[14px] font-semibold">{{ $item->name }}</div>
+                            <div class="truncate text-[14px] font-semibold">{{ $item->name }}@if ($item->qty > 1)<span class="font-medium text-ink-3"> ×{{ $item->qty }}</span>@endif</div>
                             <div class="mt-0.5 truncate text-xs font-medium text-ink-3">
                                 {{ $item->place_id ? implode(' › ', $this->tree->breadcrumb($item->place_id)) : '' }}
                             </div>

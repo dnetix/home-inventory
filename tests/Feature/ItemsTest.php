@@ -113,6 +113,16 @@ class ItemsTest extends TestCase
             ->assertSee('heirloom');
     }
 
+    public function test_index_shows_the_quantity_next_to_the_name_when_above_one(): void
+    {
+        Item::factory()->for($this->home)->create(['name' => 'Folding chair', 'qty' => 6]);
+        Item::factory()->for($this->home)->create(['name' => 'Ladder', 'qty' => 1]);
+
+        Livewire::test(Index::class)
+            ->assertSeeHtml('×6')
+            ->assertDontSeeHtml('×1');
+    }
+
     public function test_index_missing_data_filter(): void
     {
         Item::factory()->for($this->home)->create(['name' => 'Unpriced thing', 'value' => null]);

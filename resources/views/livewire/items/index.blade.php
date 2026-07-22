@@ -83,7 +83,7 @@
                         @endif
                         <x-item-thumb class="size-[46px] rounded-[11px]" :item="$item" />
                         <div class="min-w-0 flex-1">
-                            <div class="truncate text-[15px] font-semibold">{{ $item->name }}</div>
+                            <div class="truncate text-[15px] font-semibold">{{ $item->name }}@if ($item->qty > 1)<span class="font-medium text-ink-3"> ×{{ $item->qty }}</span>@endif</div>
                             <div class="mt-0.5 truncate text-[12.5px] font-medium text-ink-3">
                                 {{ $item->place_id ? implode(' › ', $this->placeIndex->breadcrumb($item->place_id)) : 'No location' }}
                             </div>
@@ -165,7 +165,7 @@
                                         <div class="flex items-center gap-3">
                                             <x-item-thumb class="size-9 rounded-[9px]" :item="$item" :icon-size="16" />
                                             <div class="min-w-0">
-                                                <div class="truncate font-semibold">{{ $item->name }}</div>
+                                                <div class="truncate font-semibold">{{ $item->name }}@if ($item->qty > 1)<span class="font-medium text-ink-3"> ×{{ $item->qty }}</span>@endif</div>
                                                 @if ($item->note)
                                                     <div class="truncate text-[12px] text-ink-3">{{ $item->note }}</div>
                                                 @endif
@@ -230,7 +230,7 @@
                             <x-item-thumb class="h-[110px] w-full rounded-[10px]" :item="$item" :icon-size="30" />
                             <div class="mt-2.5 flex items-start justify-between gap-2">
                                 <div class="min-w-0">
-                                    <div class="truncate text-[14px] font-semibold">{{ $item->name }}</div>
+                                    <div class="truncate text-[14px] font-semibold">{{ $item->name }}@if ($item->qty > 1)<span class="font-medium text-ink-3"> ×{{ $item->qty }}</span>@endif</div>
                                     <div class="mt-0.5 truncate text-[12px] font-medium text-ink-3">
                                         {{ $item->place_id ? implode(' › ', $this->placeIndex->breadcrumb($item->place_id)) : 'No location' }}
                                     </div>
