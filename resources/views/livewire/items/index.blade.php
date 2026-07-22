@@ -60,7 +60,7 @@
                 $tag !== null ? '#'.$this->tags->firstWhere('id', $tag)?->label : null,
             ]);
         @endphp
-        <div class="mx-5 mb-3 flex items-center gap-2.5 rounded-xl bg-accent-soft px-3 py-2.5 text-accent-ink lg:mx-[30px]">
+        <div class="mx-5 mb-3 flex items-center gap-2.5 rounded-xl bg-accent-soft px-3 py-2.5 text-accent-ink lg:mx-[30px] lg:mt-[18px] lg:-mb-1">
             <x-icon name="filter" :size="16" :stroke="1.9" />
             <span class="flex-1 text-[13.5px] font-bold">{{ implode(' · ', $filterLabels) }} · {{ $this->items->total() }}</span>
             <button type="button" class="cursor-pointer text-[13.5px] font-bold" wire:click="clearFilters">Clear</button>
@@ -111,7 +111,7 @@
     </div>
 
     {{-- ══ Desktop: split table/grid + detail pane ══ --}}
-    <div class="hidden min-h-0 flex-1 gap-[18px] px-[30px] pb-[30px] lg:flex">
+    <div class="hidden min-h-0 flex-1 gap-[18px] px-[30px] pb-[30px] lg:flex lg:pt-[18px]">
         <div class="min-w-0 flex-1">
             @if ($this->items->isEmpty())
                 <x-empty-state :icon="$missing !== '' ? 'check-circle' : 'box'"

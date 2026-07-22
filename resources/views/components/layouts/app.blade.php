@@ -65,7 +65,7 @@
     {{-- Main column --}}
     <div class="flex min-h-dvh flex-col pb-[88px] lg:pb-0 lg:pl-[76px]">
         {{-- Desktop top bar: page heading (teleported per screen) + global search + page actions + add item --}}
-        <header class="sticky top-0 z-30 hidden min-h-[62px] items-center gap-4 border-b border-line bg-screen px-[30px] py-2.5 lg:flex mb-2">
+        <header class="sticky top-0 z-30 hidden min-h-[62px] items-center gap-4 border-b border-line bg-screen px-[30px] py-2.5 lg:flex">
             <div id="topbar-page" class="min-w-0 shrink-0 empty:hidden"></div>
             {{-- On the items list the real search input teleports in here; elsewhere
                  the placeholder button navigates there and focuses it (app.js flag) --}}
