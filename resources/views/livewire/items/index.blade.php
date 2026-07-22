@@ -72,9 +72,11 @@
         @if ($this->items->isNotEmpty())
             <x-ui.card class="divide-y divide-line px-4">
                 @foreach ($this->items as $item)
-                    <a href="{{ route('items.show', $item) }}" wire:navigate wire:key="m-{{ $item->id }}"
-                        @if ($selecting) x-on:click.prevent="toggle({{ $item->id }})" @endif
-                        class="flex items-center gap-3 py-2.5">
+                    {{-- Keyed by mode: wire:navigate binds its listener at element creation,
+                         so the row must be recreated (not morphed) when selection toggles --}}
+                    <a wire:key="m-{{ $item->id }}-{{ $selecting ? 'sel' : 'nav' }}"
+                        @if ($selecting) x-on:click.prevent="toggle({{ $item->id }})" @else href="{{ route('items.show', $item) }}" wire:navigate @endif
+                        class="flex cursor-pointer items-center gap-3 py-2.5">
                         @if ($selecting)
                             <span class="flex size-[22px] shrink-0 items-center justify-center rounded-full border transition"
                                 x-bind:class="has({{ $item->id }}) ? 'border-accent bg-accent text-on-accent' : 'border-line-2'">
