@@ -88,6 +88,23 @@ class PlacesTest extends TestCase
             ->assertSee('Cordless drill');
     }
 
+    public function test_place_items_can_be_filtered_excluding_sublocations(): void
+    {
+        $garage = Place::factory()->for($this->home)->create(['label' => 'Garage']);
+        $shelf = Place::factory()->for($this->home)->childOf($garage)->create(['label' => 'Shelf B']);
+        Item::factory()->for($this->home)->for($garage, 'place')->create(['name' => 'Drill press']);
+        Item::factory()->for($this->home)->for($garage, 'place')->create(['name' => 'Workbench vise']);
+        Item::factory()->for($this->home)->for($shelf, 'place')->create(['name' => 'Drill bits']);
+
+        Livewire::test(Show::class, ['place' => $garage])
+            ->set('itemSearch', 'drill')
+            ->assertSee('Drill press')
+            ->assertDontSee('Workbench vise')
+            ->assertDontSee('Drill bits')
+            ->set('itemSearch', 'bits')
+            ->assertSee('No items here match');
+    }
+
     public function test_items_can_be_batch_moved_from_the_place_screen(): void
     {
         $shelf = Place::factory()->for($this->home)->create(['label' => 'Shelf B']);

@@ -27,6 +27,11 @@ class Show extends Component
      */
     public string $editor = '';
 
+    /**
+     * Filters the "Items here" list — direct items only, never sub-locations.
+     */
+    public string $itemSearch = '';
+
     public function mount(Place $place): void
     {
         $this->authorize('view', $place);

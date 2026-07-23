@@ -5,7 +5,11 @@
     $children = $this->tree->childrenOf($place->id);
     $directItems = $this->tree->itemsIn($place->id);
     $allItems = $this->tree->itemsUnder($place->id);
-    $listItems = $directItems->isNotEmpty() ? $directItems : $allItems;
+    $baseItems = $directItems->isNotEmpty() ? $directItems : $allItems;
+    $needle = mb_strtolower(trim($itemSearch));
+    $listItems = $needle === ''
+        ? $baseItems
+        : $directItems->filter(fn ($item) => str_contains(mb_strtolower($item->name), $needle))->values();
     $crumb = $this->tree->breadcrumbPlaces($place->id);
     $counts = $allItems->count().' '.Str::plural('item', $allItems->count())
         .($children->isNotEmpty() ? ' · '.$children->count().' sub-'.Str::plural('location', $children->count()) : '');
@@ -102,14 +106,46 @@
             @endif
 
             {{-- Items here (mobile caps the list at 6; desktop has room for all) --}}
-            <div class="mb-3 flex items-center justify-between">
-                <x-ui.section-label>Items here</x-ui.section-label>
-                @if ($listItems->isNotEmpty())
-                    <button type="button" wire:click="toggleSelecting"
-                        class="cursor-pointer text-[13px] font-bold {{ $selecting ? 'text-accent' : 'text-ink-3' }}">
-                        {{ $selecting ? 'Done' : 'Select' }}
+            <div x-data="{ searchOpen: {{ $needle !== '' ? 'true' : 'false' }} }">
+                <div class="mb-3 flex items-center gap-2.5">
+                    <x-ui.section-label class="flex-1">Items here</x-ui.section-label>
+                    {{-- Desktop: inline filter, direct items only --}}
+                    <div class="hidden w-[240px] items-center gap-2 rounded-[11px] border border-line-2 bg-surface px-3 transition focus-within:border-accent focus-within:ring-[3.5px] focus-within:ring-accent-soft lg:flex">
+                        <x-icon name="search" :size="14" :stroke="1.9" class="shrink-0 text-ink-3" />
+                        <input type="search" wire:model.live.debounce.300ms="itemSearch" placeholder="Filter in this place…"
+                            class="w-full bg-transparent py-1.5 text-[13px] font-medium text-ink outline-none placeholder:text-ink-3">
+                        @if ($needle !== '')
+                            <button type="button" class="shrink-0 cursor-pointer text-ink-3" wire:click="$set('itemSearch', '')">
+                                <x-icon name="x" :size="13" :stroke="2.2" />
+                            </button>
+                        @endif
+                    </div>
+                    {{-- Mobile: magnifier toggles the filter row below --}}
+                    <button type="button" class="cursor-pointer lg:hidden {{ $needle !== '' ? 'text-accent' : 'text-ink-3' }}"
+                        x-bind:class="searchOpen && 'text-accent'"
+                        x-on:click="searchOpen = ! searchOpen; searchOpen && $nextTick(() => $refs.placeSearch.focus())">
+                        <x-icon name="search" :size="17" :stroke="2" />
                     </button>
-                @endif
+                    @if ($baseItems->isNotEmpty())
+                        <button type="button" wire:click="toggleSelecting"
+                            class="cursor-pointer text-[13px] font-bold {{ $selecting ? 'text-accent' : 'text-ink-3' }}">
+                            {{ $selecting ? 'Done' : 'Select' }}
+                        </button>
+                    @endif
+                </div>
+                <div class="mb-3 lg:hidden" x-show="searchOpen" x-cloak>
+                    <div class="flex min-h-[40px] items-center gap-2 rounded-[11px] border border-line-2 bg-surface px-3 transition focus-within:border-accent focus-within:ring-[3.5px] focus-within:ring-accent-soft">
+                        <x-icon name="search" :size="15" :stroke="1.9" class="shrink-0 text-ink-3" />
+                        <input type="search" wire:model.live.debounce.300ms="itemSearch" placeholder="Filter in this place…"
+                            x-ref="placeSearch" x-on:keydown.enter="$event.target.blur()"
+                            class="w-full bg-transparent py-2 text-[14px] font-medium text-ink outline-none placeholder:text-ink-3">
+                        @if ($needle !== '')
+                            <button type="button" class="shrink-0 cursor-pointer text-ink-3" wire:click="$set('itemSearch', '')">
+                                <x-icon name="x" :size="14" :stroke="2.2" />
+                            </button>
+                        @endif
+                    </div>
+                </div>
             </div>
             <x-ui.card class="divide-y divide-line px-3.5">
                 @forelse ($listItems as $item)
@@ -135,7 +171,9 @@
                         <x-icon name="chevron-right" :size="16" class="text-ink-4" />
                     </a>
                 @empty
-                    <div class="py-4 text-center text-[13.5px] font-medium text-ink-3">No items here yet.</div>
+                    <div class="py-4 text-center text-[13.5px] font-medium text-ink-3">
+                        {{ $needle !== '' ? 'No items here match “'.trim($itemSearch).'”.' : 'No items here yet.' }}
+                    </div>
                 @endforelse
                 @if ($listItems->count() > 6)
                     <div class="py-2.5 text-center text-xs font-semibold text-ink-3 lg:hidden">
