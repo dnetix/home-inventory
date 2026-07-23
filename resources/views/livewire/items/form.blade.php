@@ -106,14 +106,7 @@
             <div class="flex gap-3">
                 <div class="min-w-0 flex-1">
                     <div class="mb-[7px] text-[12.5px] font-bold text-ink-2">Location</div>
-                    <button type="button" wire:click="$set('placePickerOpen', true)"
-                        class="flex min-h-[50px] w-full cursor-pointer items-center gap-2.5 rounded-btn border border-line-2 bg-surface px-3.5 text-left">
-                        <x-icon name="map-pin" :size="19" class="shrink-0 text-ink-3" />
-                        <span class="flex-1 truncate text-[15.5px] font-medium {{ $form->placeId ? '' : 'text-ink-3' }}">
-                            {{ $form->placeId ? implode(' › ', $this->placeIndex->breadcrumb($form->placeId)) : 'No location' }}
-                        </span>
-                        <x-icon name="chevron-down" :size="16" class="shrink-0 text-ink-3" />
-                    </button>
+                    <x-place-combobox :place-index="$this->placeIndex" property="form.placeId" />
                     @error('form.placeId')<p class="mt-1.5 text-[13px] font-semibold text-bad">{{ $message }}</p>@enderror
                 </div>
                 <div class="w-[92px] shrink-0">
@@ -161,27 +154,4 @@
         </x-ui.btn>
     </div>
 
-    {{-- Place picker sheet --}}
-    @if ($placePickerOpen)
-        <x-ui.sheet title="Location" close="closePlacePicker">
-            <div class="flex max-h-[50vh] flex-col overflow-y-auto rounded-[14px] border border-line">
-                <button type="button" wire:click="pickPlace(null)"
-                    class="flex cursor-pointer items-center gap-2.5 border-b border-line px-3.5 py-2.5 text-left {{ $form->placeId === null ? 'bg-accent-soft' : 'hover:bg-fill' }}">
-                    <span class="flex-1 text-[14px] font-semibold {{ $form->placeId === null ? 'text-accent-ink' : 'text-ink-3' }}">No location</span>
-                </button>
-                @foreach ($this->placeIndex->flatten() as $entry)
-                    <button type="button" wire:key="pp-{{ $entry['place']->id }}"
-                        wire:click="pickPlace({{ $entry['place']->id }})"
-                        class="flex cursor-pointer items-center gap-2.5 border-b border-line px-3.5 py-2.5 text-left last:border-0 {{ $form->placeId === $entry['place']->id ? 'bg-accent-soft' : 'hover:bg-fill' }}"
-                        style="padding-left: {{ 14 + $entry['depth'] * 18 }}px">
-                        <x-icon :name="$entry['place']->glyph ?: 'box'" :size="16"
-                            class="{{ $form->placeId === $entry['place']->id ? 'text-accent-ink' : 'text-ink-3' }}" />
-                        <span class="flex-1 text-[14px] font-semibold {{ $form->placeId === $entry['place']->id ? 'text-accent-ink' : '' }}">
-                            {{ $entry['place']->label }}
-                        </span>
-                    </button>
-                @endforeach
-            </div>
-        </x-ui.sheet>
-    @endif
 </div>

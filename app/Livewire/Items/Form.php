@@ -31,8 +31,6 @@ class Form extends Component
 
     public bool $removePhoto = false;
 
-    public bool $placePickerOpen = false;
-
     public function mount(?Item $item = null): void
     {
         if ($item?->exists) {
@@ -106,17 +104,6 @@ class Form extends Component
         $this->form->tagIds = in_array($tagId, $this->form->tagIds, true)
             ? array_values(array_diff($this->form->tagIds, [$tagId]))
             : [...$this->form->tagIds, $tagId];
-    }
-
-    public function pickPlace(?int $placeId): void
-    {
-        $this->form->placeId = $placeId;
-        $this->placePickerOpen = false;
-    }
-
-    public function closePlacePicker(): void
-    {
-        $this->placePickerOpen = false;
     }
 
     /**
