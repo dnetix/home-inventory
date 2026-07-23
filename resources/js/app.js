@@ -42,6 +42,63 @@ window.shrinkPhoto = async (file) => {
 // `sel` is entangled (deferred) with the component's $selectedIds — the server
 // receives it with the next real request (opening the Move/Status sheet).
 document.addEventListener('alpine:init', () => {
+    // Masks a money input with es-CO style thousand separators while typing
+    // (50000 → 50.000; decimals via comma). The Livewire model receives the
+    // plain machine number ("50000" / "50000.75") via a deferred set, so
+    // validation and Money::fromDollars keep working untouched.
+    window.Alpine.data('moneyInput', (prop) => ({
+        last: '',
+        init() {
+            this.render(String(this.$wire.get(prop) ?? '').replace('.', ','));
+        },
+        onInput(event) {
+            let value = this.$el.value;
+            let caret = this.$el.selectionStart;
+
+            // A typed "." is decimal intent (group dots are only ever added
+            // by the mask itself) — treat it as the display comma.
+            if (event.inputType === 'insertText' && event.data === '.') {
+                value = `${value.slice(0, caret - 1)},${value.slice(caret)}`;
+            }
+
+            // Deleting only a group separator would be undone by the reformat,
+            // trapping the caret — extend the deletion to the adjacent digit.
+            if (event.inputType?.startsWith('deleteContent') && this.countSignificant(value) === this.countSignificant(this.last)) {
+                if (event.inputType === 'deleteContentBackward' && caret > 0) {
+                    value = value.slice(0, caret - 1) + value.slice(caret);
+                    caret--;
+                } else if (event.inputType === 'deleteContentForward') {
+                    value = value.slice(0, caret) + value.slice(caret + 1);
+                }
+            }
+
+            const significantBeforeCaret = this.countSignificant(value.slice(0, caret));
+
+            this.render(value);
+            this.moveCaretAfter(significantBeforeCaret);
+        },
+        render(value) {
+            const [integers, ...decimals] = value.replace(/[^\d,]/g, '').split(',');
+            const decimal = decimals.length ? `,${decimals.join('')}` : '';
+
+            this.$el.value = integers.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + decimal;
+            this.last = this.$el.value;
+            this.$wire.set(prop, integers + decimal.replace(',', '.'), false);
+        },
+        countSignificant(value) {
+            return (value.match(/[\d,]/g) ?? []).length;
+        },
+        moveCaretAfter(count) {
+            let pos = 0;
+
+            for (let seen = 0; pos < this.$el.value.length && seen < count; pos++) {
+                if (/[\d,]/.test(this.$el.value[pos])) seen++;
+            }
+
+            this.$el.setSelectionRange(pos, pos);
+        },
+    }));
+
     window.Alpine.data('itemSelection', (sel) => ({
         sel,
         has(id) {

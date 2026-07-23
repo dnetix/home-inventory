@@ -146,7 +146,7 @@
             <div class="flex gap-3">
                 <div class="min-w-0 flex-1">
                     <x-ui.field label="Approx. value" name="form.value" icon="star" inputmode="decimal" placeholder="0"
-                        wire:model="form.value" />
+                        autocomplete="off" x-data="moneyInput('form.value')" x-on:input="onInput" />
                 </div>
                 <div class="min-w-0 flex-1">
                     <x-ui.field label="Warranty until" name="form.warrantyUntil" icon="shield" type="date"
