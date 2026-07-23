@@ -38,19 +38,26 @@
 
     <div class="flex flex-1 gap-[18px] px-5 pb-6 lg:px-[30px] lg:pt-[18px] lg:pb-[30px]">
         <div class="min-w-0 flex-1">
-            {{-- Breadcrumb --}}
-            <div class="mb-[5px] flex items-center gap-[5px] text-xs font-semibold text-ink-3 lg:mb-4">
+            {{-- Breadcrumb (mobile shows ancestors only — the title right below
+                 already names this place; root places get no mobile crumb) --}}
+            <div @class([
+                'mb-[5px] items-center gap-[5px] text-xs font-semibold text-ink-3 lg:mb-4',
+                'hidden lg:flex' => count($crumb) === 1,
+                'flex' => count($crumb) > 1,
+            ])>
                 <a href="{{ route('places.index') }}" wire:navigate class="transition hover:text-accent">
                     <x-icon name="home" :size="13" :stroke="1.9" />
                 </a>
                 @foreach ($crumb as $part)
-                    @if (! $loop->first)<span>›</span>@endif
-                    @if ($loop->last)
-                        <span class="font-bold text-ink-2">{{ $part->label }}</span>
-                    @else
-                        <a href="{{ route('places.show', $part) }}" wire:navigate
-                            class="transition hover:text-accent hover:underline">{{ $part->label }}</a>
-                    @endif
+                    <span @class(['items-center gap-[5px]', 'hidden lg:flex' => $loop->last, 'flex' => ! $loop->last])>
+                        @if (! $loop->first)<span>›</span>@endif
+                        @if ($loop->last)
+                            <span class="font-bold text-ink-2">{{ $part->label }}</span>
+                        @else
+                            <a href="{{ route('places.show', $part) }}" wire:navigate
+                                class="transition hover:text-accent hover:underline">{{ $part->label }}</a>
+                        @endif
+                    </span>
                 @endforeach
             </div>
 
@@ -109,8 +116,12 @@
             <div x-data="{ searchOpen: {{ $needle !== '' ? 'true' : 'false' }} }">
                 <div class="mb-3 flex items-center gap-2.5">
                     <x-ui.section-label class="flex-1">Items here</x-ui.section-label>
-                    {{-- Desktop: inline filter, direct items only --}}
-                    <div class="hidden w-[240px] items-center gap-2 rounded-[11px] border border-line-2 bg-surface px-3 transition focus-within:border-accent focus-within:ring-[3.5px] focus-within:ring-accent-soft lg:flex">
+                    {{-- Desktop: inline filter, direct items only (hidden when there is nothing to filter) --}}
+                    <div @class([
+                        'w-[240px] items-center gap-2 rounded-[11px] border border-line-2 bg-surface px-3 transition focus-within:border-accent focus-within:ring-[3.5px] focus-within:ring-accent-soft',
+                        'hidden lg:flex' => $directItems->isNotEmpty(),
+                        'hidden' => $directItems->isEmpty(),
+                    ])>
                         <x-icon name="search" :size="14" :stroke="1.9" class="shrink-0 text-ink-3" />
                         <input type="search" wire:model.live.debounce.300ms="itemSearch" placeholder="Filter in this place…"
                             class="w-full bg-transparent py-1.5 text-[13px] font-medium text-ink outline-none placeholder:text-ink-3">
@@ -121,7 +132,8 @@
                         @endif
                     </div>
                     {{-- Mobile: magnifier toggles the filter row below --}}
-                    <button type="button" class="cursor-pointer lg:hidden {{ $needle !== '' ? 'text-accent' : 'text-ink-3' }}"
+                    <button type="button"
+                        class="{{ $directItems->isEmpty() ? 'hidden' : '' }} cursor-pointer lg:hidden {{ $needle !== '' ? 'text-accent' : 'text-ink-3' }}"
                         x-bind:class="searchOpen && 'text-accent'"
                         x-on:click="searchOpen = ! searchOpen; searchOpen && $nextTick(() => $refs.placeSearch.focus())">
                         <x-icon name="search" :size="17" :stroke="2" />
