@@ -44,11 +44,13 @@ class ItemPhotoTest extends TestCase
 
         $this->assertNotNull($item->photo_path);
         Storage::disk('s3')->assertExists($item->photo_path);
+        Storage::disk('s3')->assertExists(Item::thumbPath($item->photo_path));
     }
 
-    public function test_replacing_a_photo_deletes_the_old_object(): void
+    public function test_replacing_a_photo_deletes_the_old_object_and_its_thumbnail(): void
     {
         $oldPath = UploadedFile::fake()->create('old.jpg', 128, 'image/jpeg')->store('items/'.$this->home->id, 's3');
+        Storage::disk('s3')->put(Item::thumbPath($oldPath), 'thumb-bytes');
         $item = Item::factory()->for($this->home)->create(['photo_path' => $oldPath]);
 
         Livewire::test(Form::class, ['item' => $item])
@@ -60,12 +62,15 @@ class ItemPhotoTest extends TestCase
 
         $this->assertNotSame($oldPath, $item->photo_path);
         Storage::disk('s3')->assertMissing($oldPath);
+        Storage::disk('s3')->assertMissing(Item::thumbPath($oldPath));
         Storage::disk('s3')->assertExists($item->photo_path);
+        Storage::disk('s3')->assertExists(Item::thumbPath($item->photo_path));
     }
 
     public function test_a_photo_can_be_removed(): void
     {
         $path = UploadedFile::fake()->create('photo.jpg', 128, 'image/jpeg')->store('items/'.$this->home->id, 's3');
+        Storage::disk('s3')->put(Item::thumbPath($path), 'thumb-bytes');
         $item = Item::factory()->for($this->home)->create(['photo_path' => $path]);
 
         Livewire::test(Form::class, ['item' => $item])
@@ -75,17 +80,32 @@ class ItemPhotoTest extends TestCase
 
         $this->assertNull($item->fresh()->photo_path);
         Storage::disk('s3')->assertMissing($path);
+        Storage::disk('s3')->assertMissing(Item::thumbPath($path));
     }
 
-    public function test_deleting_an_item_deletes_its_photo(): void
+    public function test_deleting_an_item_deletes_its_photo_and_thumbnail(): void
     {
         $path = UploadedFile::fake()->create('photo.jpg', 128, 'image/jpeg')->store('items/'.$this->home->id, 's3');
+        Storage::disk('s3')->put(Item::thumbPath($path), 'thumb-bytes');
         $item = Item::factory()->for($this->home)->create(['photo_path' => $path]);
 
         Livewire::test(Show::class, ['item' => $item])
             ->call('delete');
 
         Storage::disk('s3')->assertMissing($path);
+        Storage::disk('s3')->assertMissing(Item::thumbPath($path));
+    }
+
+    public function test_photos_shrink_backfills_missing_thumbnails(): void
+    {
+        $path = UploadedFile::fake()->create('photo.jpg', 128, 'image/jpeg')->store('items/'.$this->home->id, 's3');
+        Item::factory()->for($this->home)->create(['photo_path' => $path]);
+
+        $this->artisan('photos:shrink')
+            ->expectsOutputToContain('1 thumbnail(s) generated')
+            ->assertSuccessful();
+
+        Storage::disk('s3')->assertExists(Item::thumbPath($path));
     }
 
     public function test_lists_show_the_photo_thumbnail_and_fall_back_to_the_glyph(): void

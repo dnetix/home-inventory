@@ -95,7 +95,7 @@ class Form extends Component
         }
 
         if ($previous !== null && $previous !== $item->photo_path) {
-            Item::photoDisk()->delete($previous);
+            Item::deletePhotoObjects($previous);
         }
     }
 

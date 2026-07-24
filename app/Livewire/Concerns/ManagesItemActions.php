@@ -86,7 +86,7 @@ trait ManagesItemActions
         $item->update(['photo_path' => $path]);
 
         if ($previous !== null && $previous !== $path) {
-            Item::photoDisk()->delete($previous);
+            Item::deletePhotoObjects($previous);
         }
 
         $this->detailPhoto = null;

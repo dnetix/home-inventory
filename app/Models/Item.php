@@ -36,7 +36,7 @@ class Item extends Model
 
         static::deleting(function (Item $item): void {
             if ($item->photo_path !== null) {
-                self::photoDisk()->delete($item->photo_path);
+                self::deletePhotoObjects($item->photo_path);
             }
         });
     }
@@ -136,21 +136,49 @@ class Item extends Model
     }
 
     /**
+     * Object path of the list thumbnail that lives next to a photo
+     * (items/1/abc.jpg → items/1/abc_thumb.jpg).
+     */
+    public static function thumbPath(string $photoPath): string
+    {
+        return pathinfo($photoPath, PATHINFO_DIRNAME).'/'.pathinfo($photoPath, PATHINFO_FILENAME).'_thumb.jpg';
+    }
+
+    /**
+     * Delete a photo object together with its thumbnail.
+     */
+    public static function deletePhotoObjects(string $photoPath): void
+    {
+        self::photoDisk()->delete([$photoPath, self::thumbPath($photoPath)]);
+    }
+
+    public function photoUrl(): ?string
+    {
+        return $this->photo_path === null ? null : $this->signedPhotoUrl($this->photo_path);
+    }
+
+    /**
+     * Small variant for lists and grids; the object may be missing for photos
+     * stored before thumbnails existed, so <x-item-thumb> falls back to the
+     * original client-side (photos:shrink backfills them).
+     */
+    public function photoThumbUrl(): ?string
+    {
+        return $this->photo_path === null ? null : $this->signedPhotoUrl(self::thumbPath($this->photo_path));
+    }
+
+    /**
      * A short-lived presigned URL — the photo bucket stays private. Cached
      * shorter than its validity so re-renders keep the same URL: a fresh
      * signature per render would make the browser re-download every photo
      * on every Livewire update.
      */
-    public function photoUrl(): ?string
+    private function signedPhotoUrl(string $path): string
     {
-        if ($this->photo_path === null) {
-            return null;
-        }
-
         return Cache::remember(
-            'photo-url:'.config('filesystems.photos').':'.$this->photo_path,
+            'photo-url:'.config('filesystems.photos').':'.$path,
             now()->addMinutes(20),
-            fn (): string => self::photoDisk()->temporaryUrl($this->photo_path, now()->addMinutes(30)),
+            fn (): string => self::photoDisk()->temporaryUrl($path, now()->addMinutes(30)),
         );
     }
 }

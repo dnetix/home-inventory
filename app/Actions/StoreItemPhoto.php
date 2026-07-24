@@ -38,6 +38,14 @@ class StoreItemPhoto
             ]);
         }
 
+        // Best-effort: lists fall back to the original while a thumbnail is
+        // missing, so a failed write only costs bandwidth, not the save.
+        try {
+            Item::photoDisk()->put(Item::thumbPath($path), PhotoShrinker::thumbnail()->shrink($shrunk));
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+
         return $path;
     }
 }

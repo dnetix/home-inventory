@@ -18,6 +18,15 @@ class PhotoShrinker
     ) {}
 
     /**
+     * The variant used for list/grid thumbnails: tiles render at ≤160 CSS px,
+     * so 320px covers retina at a fraction of the full photo's weight.
+     */
+    public static function thumbnail(): self
+    {
+        return new self(maxEdge: 320, quality: 75);
+    }
+
+    /**
      * JPEG bytes capped at maxEdge on the longest side, or the input unchanged
      * when it is not a decodable oversized image.
      */
