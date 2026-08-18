@@ -11,23 +11,11 @@
 @endphp
 
 <x-ui.sheet close="cancelTransfer" :title="'Move “'.$this->transferItem->name.'”'">
-    <div class="flex max-h-[44vh] flex-col overflow-y-auto rounded-[14px] border border-line">
-        @foreach ($this->placeIndex->flatten() as $entry)
-            <button type="button" wire:key="tp-{{ $entry['place']->id }}"
-                wire:click="$set('transferPlaceId', {{ $entry['place']->id }})"
-                class="flex cursor-pointer items-center gap-2.5 border-b border-line px-3.5 py-2.5 text-left last:border-0 {{ $transferPlaceId === $entry['place']->id ? 'bg-accent-soft' : 'hover:bg-fill' }}"
-                style="padding-left: {{ 14 + $entry['depth'] * 18 }}px">
-                <x-icon :name="$entry['place']->glyph ?: 'box'" :size="16"
-                    class="{{ $transferPlaceId === $entry['place']->id ? 'text-accent-ink' : 'text-ink-3' }}" />
-                <span class="flex-1 text-[14px] font-semibold {{ $transferPlaceId === $entry['place']->id ? 'text-accent-ink' : '' }}">
-                    {{ $entry['place']->label }}
-                </span>
-                @if ($this->transferItem->place_id === $entry['place']->id)
-                    <span class="text-[11px] font-bold text-ink-3 uppercase">current</span>
-                @endif
-            </button>
-        @endforeach
-    </div>
+    @include('livewire.items.partials.place-filter-list', [
+        'property' => 'transferPlaceId',
+        'selectedId' => $transferPlaceId,
+        'currentId' => $this->transferItem->place_id,
+    ])
 
     @if ($fit)
         <div class="mt-3.5 flex items-center gap-3 rounded-[14px] px-3.5 py-3 {{ $fitStyles[$fit->status->value] }}">
