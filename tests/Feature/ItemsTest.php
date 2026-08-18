@@ -144,6 +144,15 @@ class ItemsTest extends TestCase
             ->assertSee('Breville');
     }
 
+    public function test_index_lists_newest_items_first_by_default(): void
+    {
+        Item::factory()->for($this->home)->create(['name' => 'Aardvark figurine', 'created_at' => now()->subDay()]);
+        Item::factory()->for($this->home)->create(['name' => 'Zebra lamp']);
+
+        Livewire::test(Index::class)
+            ->assertSeeInOrder(['Zebra lamp', 'Aardvark figurine']);
+    }
+
     public function test_index_sorts_by_value(): void
     {
         Item::factory()->for($this->home)->create(['name' => 'Cheap', 'value' => 1000]);

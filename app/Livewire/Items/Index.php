@@ -55,10 +55,10 @@ class Index extends Component
     public bool $showTags = false;
 
     #[Url]
-    public string $sort = 'name';
+    public string $sort = 'added';
 
     #[Url]
-    public string $dir = 'asc';
+    public string $dir = 'desc';
 
     public bool $filterOpen = false;
 
@@ -202,7 +202,7 @@ class Index extends Component
             $query->whereHas('tags', fn (Builder $tags) => $tags->whereKey($this->tag));
         }
 
-        if (! $searching || $this->sort !== 'name' || $this->dir !== 'asc') {
+        if (! $searching || $this->sort !== 'added' || $this->dir !== 'desc') {
             $this->applySort($query);
         }
 
@@ -271,6 +271,7 @@ class Index extends Component
                 ->withCount(['lends as active_lends_count' => fn (Builder $q) => $q->whereNull('returned_at')])
                 ->orderBy('status', $this->dir)
                 ->orderBy('active_lends_count', $this->dir),
+            'added' => $query->orderBy('created_at', $this->dir)->orderBy('id', $this->dir),
             default => $query->orderBy('name', $this->dir),
         };
 
