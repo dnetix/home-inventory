@@ -496,6 +496,116 @@ class ItemsTest extends TestCase
         $this->assertNull($foreign->fresh()->place_id);
     }
 
+    public function test_batch_category_applies_to_all_selected_items(): void
+    {
+        $tools = Category::factory()->for($this->home)->create(['label' => 'Tools']);
+        $a = Item::factory()->for($this->home)->create();
+        $b = Item::factory()->for($this->home)->create();
+        $untouched = Item::factory()->for($this->home)->create();
+
+        Livewire::test(Index::class)
+            ->call('toggleSelecting')
+            ->call('selectMany', [$a->id, $b->id])
+            ->call('openBatch', 'category')
+            ->set('batchCategoryId', $tools->id)
+            ->call('confirmBatchCategory')
+            ->assertSet('selecting', false);
+
+        $this->assertSame($tools->id, $a->fresh()->category_id);
+        $this->assertSame($tools->id, $b->fresh()->category_id);
+        $this->assertNull($untouched->fresh()->category_id);
+    }
+
+    public function test_batch_category_can_clear_the_category(): void
+    {
+        $tools = Category::factory()->for($this->home)->create();
+        $item = Item::factory()->for($this->home)->create(['category_id' => $tools->id]);
+
+        Livewire::test(Index::class)
+            ->call('toggleSelecting')
+            ->call('toggleSelected', $item->id)
+            ->call('openBatch', 'category')
+            ->set('batchCategoryId', 0)
+            ->call('confirmBatchCategory');
+
+        $this->assertNull($item->fresh()->category_id);
+    }
+
+    public function test_batch_category_rejects_categories_from_other_homes(): void
+    {
+        $foreignCategory = Category::factory()->for(Home::factory()->create())->create();
+        $item = Item::factory()->for($this->home)->create();
+
+        $this->expectException(ModelNotFoundException::class);
+
+        Livewire::test(Index::class)
+            ->call('toggleSelecting')
+            ->call('toggleSelected', $item->id)
+            ->call('openBatch', 'category')
+            ->set('batchCategoryId', $foreignCategory->id)
+            ->call('confirmBatchCategory');
+    }
+
+    public function test_batch_tags_add_and_remove_across_selected_items(): void
+    {
+        $fragile = Tag::factory()->for($this->home)->create(['label' => 'Fragile']);
+        $keep = Tag::factory()->for($this->home)->create(['label' => 'Keep']);
+        $old = Tag::factory()->for($this->home)->create(['label' => 'Old']);
+        $a = Item::factory()->for($this->home)->create();
+        $b = Item::factory()->for($this->home)->create();
+        $a->tags()->attach([$keep->id, $old->id]);
+        $b->tags()->attach($old->id);
+
+        Livewire::test(Index::class)
+            ->call('toggleSelecting')
+            ->call('selectMany', [$a->id, $b->id])
+            ->call('openBatch', 'tags')
+            ->assertSet('batchTagStates.'.$fragile->id, 'none')
+            ->assertSet('batchTagStates.'.$keep->id, 'some')
+            ->assertSet('batchTagStates.'.$old->id, 'all')
+            ->call('toggleBatchTag', $fragile->id)
+            ->call('toggleBatchTag', $old->id)
+            ->call('confirmBatchTags')
+            ->assertSet('selecting', false);
+
+        $this->assertEqualsCanonicalizing([$fragile->id, $keep->id], $a->fresh()->tags->modelKeys());
+        $this->assertEqualsCanonicalizing([$fragile->id], $b->fresh()->tags->modelKeys());
+    }
+
+    public function test_batch_tags_leave_untouched_tags_alone(): void
+    {
+        $keep = Tag::factory()->for($this->home)->create();
+        $added = Tag::factory()->for($this->home)->create();
+        $a = Item::factory()->for($this->home)->create();
+        $b = Item::factory()->for($this->home)->create();
+        $a->tags()->attach($keep->id);
+
+        Livewire::test(Index::class)
+            ->call('toggleSelecting')
+            ->call('selectMany', [$a->id, $b->id])
+            ->call('openBatch', 'tags')
+            ->call('toggleBatchTag', $added->id)
+            ->call('confirmBatchTags');
+
+        $this->assertEqualsCanonicalizing([$keep->id, $added->id], $a->fresh()->tags->modelKeys());
+        $this->assertEqualsCanonicalizing([$added->id], $b->fresh()->tags->modelKeys());
+    }
+
+    public function test_batch_tags_ignore_tags_from_other_homes(): void
+    {
+        $foreignTag = Tag::factory()->for(Home::factory()->create())->create();
+        $item = Item::factory()->for($this->home)->create();
+
+        Livewire::test(Index::class)
+            ->call('toggleSelecting')
+            ->call('toggleSelected', $item->id)
+            ->call('openBatch', 'tags')
+            ->call('toggleBatchTag', $foreignTag->id)
+            ->call('confirmBatchTags');
+
+        $this->assertSame([], $item->fresh()->tags->modelKeys());
+    }
+
     public function test_batch_status_works_while_searching(): void
     {
         $item = Item::factory()->for($this->home)->create(['name' => 'Cordless drill']);

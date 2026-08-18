@@ -341,5 +341,9 @@
         @include('livewire.items.partials.batch-move-sheet')
     @elseif ($batchSheet === 'status')
         @include('livewire.items.partials.batch-status-sheet')
+    @elseif ($batchSheet === 'category')
+        @include('livewire.items.partials.batch-category-sheet')
+    @elseif ($batchSheet === 'tags')
+        @include('livewire.items.partials.batch-tags-sheet')
     @endif
 </div>
