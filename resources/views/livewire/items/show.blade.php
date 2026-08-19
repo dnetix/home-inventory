@@ -6,9 +6,8 @@
             <x-icon name="chevron-left" :size="26" :stroke="2" />
         </a>
         <span class="flex-1"></span>
-        <a href="{{ route('items.edit', $item) }}" wire:navigate>
-            <x-ui.icon-btn icon="edit" :size="17" />
-        </a>
+        <x-ui.icon-btn icon="edit" :size="17"
+            x-on:click="Livewire.dispatch('item-editor:edit', { itemId: {{ $item->id }} })" />
         <x-ui.icon-btn icon="dots" :size="18" wire:click="$set('menuOpen', true)" />
     </div>
 
@@ -49,11 +48,12 @@
                     </div>
                 </button>
 
-                <a href="{{ route('items.edit', $item) }}" wire:navigate
-                    class="flex items-center gap-3.5 border-b border-line py-[13px]">
+                <button type="button"
+                    x-on:click="$wire.set('menuOpen', false); Livewire.dispatch('item-editor:edit', { itemId: {{ $item->id }} })"
+                    class="flex w-full cursor-pointer items-center gap-3.5 border-b border-line py-[13px] text-left">
                     <x-icon name="edit" :size="20" class="text-ink-2" />
                     <div class="flex-1 text-[15px] font-semibold">Edit details</div>
-                </a>
+                </button>
 
                 <button type="button" wire:click="delete"
                     wire:confirm="Delete “{{ $item->name }}”? This can't be undone."

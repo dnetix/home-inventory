@@ -12,12 +12,19 @@ use App\Support\Money;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Title('Home')]
 class Dashboard extends Component
 {
+    /**
+     * The item lightbox saved — re-render so the stats recompute.
+     */
+    #[On('item-saved')]
+    public function refreshStats(): void {}
+
     /**
      * @return array{items: int, units: int, value: Money, places: int, rooms: int, attention: int}
      */

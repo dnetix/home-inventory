@@ -12,6 +12,7 @@ use App\Support\UnitFormatter;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class Show extends Component
@@ -31,6 +32,13 @@ class Show extends Component
      * Filters the "Items here" list — direct items only, never sub-locations.
      */
     public string $itemSearch = '';
+
+    /**
+     * The item lightbox saved — re-render so the item list and fill math
+     * recompute with the change.
+     */
+    #[On('item-saved')]
+    public function refreshItems(): void {}
 
     public function mount(Place $place): void
     {

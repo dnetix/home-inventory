@@ -35,6 +35,7 @@ class ItemPhotoTest extends TestCase
     public function test_a_photo_can_be_attached_when_creating_an_item(): void
     {
         Livewire::test(Form::class)
+            ->call('create')
             ->set('form.name', 'Cordless drill')
             ->set('photo', UploadedFile::fake()->create('drill.jpg', 128, 'image/jpeg'))
             ->call('save')
@@ -53,7 +54,8 @@ class ItemPhotoTest extends TestCase
         Storage::disk('s3')->put(Item::thumbPath($oldPath), 'thumb-bytes');
         $item = Item::factory()->for($this->home)->create(['photo_path' => $oldPath]);
 
-        Livewire::test(Form::class, ['item' => $item])
+        Livewire::test(Form::class)
+            ->call('edit', $item->id)
             ->set('photo', UploadedFile::fake()->create('new.jpg', 128, 'image/jpeg'))
             ->call('save')
             ->assertHasNoErrors();
@@ -73,7 +75,8 @@ class ItemPhotoTest extends TestCase
         Storage::disk('s3')->put(Item::thumbPath($path), 'thumb-bytes');
         $item = Item::factory()->for($this->home)->create(['photo_path' => $path]);
 
-        Livewire::test(Form::class, ['item' => $item])
+        Livewire::test(Form::class)
+            ->call('edit', $item->id)
             ->call('clearPhoto')
             ->call('save')
             ->assertHasNoErrors();
@@ -179,6 +182,7 @@ class ItemPhotoTest extends TestCase
         Storage::fake('local');
 
         Livewire::test(Form::class)
+            ->call('create')
             ->set('form.name', 'Cordless drill')
             ->set('photo', UploadedFile::fake()->create('drill.jpg', 128, 'image/jpeg'))
             ->call('save')
@@ -199,6 +203,7 @@ class ItemPhotoTest extends TestCase
         config(['filesystems.photos' => 'broken-disk']);
 
         Livewire::test(Form::class)
+            ->call('create')
             ->set('form.name', 'Cordless drill')
             ->set('photo', UploadedFile::fake()->create('drill.jpg', 128, 'image/jpeg'))
             ->call('save')
@@ -210,6 +215,7 @@ class ItemPhotoTest extends TestCase
     public function test_non_images_are_rejected(): void
     {
         Livewire::test(Form::class)
+            ->call('create')
             ->set('form.name', 'Thing')
             ->set('photo', UploadedFile::fake()->create('malware.exe', 100))
             ->call('save')

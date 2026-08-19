@@ -172,6 +172,7 @@ class ItemsTest extends TestCase
         $tag = Tag::factory()->for($this->home)->create();
 
         Livewire::test(Form::class)
+            ->call('create')
             ->set('form.name', 'Label maker')
             ->set('form.categoryId', $category->id)
             ->set('form.placeId', $place->id)
@@ -183,7 +184,8 @@ class ItemsTest extends TestCase
             ->call('toggleTag', $tag->id)
             ->call('save')
             ->assertHasNoErrors()
-            ->assertRedirect();
+            ->assertDispatched('item-saved')
+            ->assertSet('open', false);
 
         $item = Item::forHome($this->home)->where('name', 'Label maker')->firstOrFail();
 
@@ -200,13 +202,13 @@ class ItemsTest extends TestCase
         $place = Place::factory()->for($this->home)->create();
 
         Livewire::test(Form::class)
+            ->call('create')
             ->set('form.name', 'Socket wrench')
             ->set('form.categoryId', $category->id)
             ->set('form.placeId', $place->id)
             ->call('save')
-            ->assertHasNoErrors();
-
-        Livewire::test(Form::class)
+            ->assertHasNoErrors()
+            ->call('create')
             ->assertSet('form.placeId', $place->id)
             ->assertSet('form.categoryId', $category->id);
     }
@@ -223,6 +225,7 @@ class ItemsTest extends TestCase
         ]);
 
         Livewire::test(Form::class)
+            ->call('create')
             ->assertSet('form.placeId', null)
             ->assertSet('form.categoryId', null);
     }
@@ -234,6 +237,7 @@ class ItemsTest extends TestCase
         Item::factory()->for($this->home)->create(['name' => 'Passport']);
 
         Livewire::test(Form::class)
+            ->call('create')
             ->set('form.name', 'drill')
             ->assertSee('Already in your inventory?')
             ->assertSee('Cordless drill')
@@ -247,7 +251,8 @@ class ItemsTest extends TestCase
         Item::factory()->for($this->home)->create(['name' => 'Cordless drill']);
         $item = Item::factory()->for($this->home)->create(['name' => 'Hammer']);
 
-        Livewire::test(Form::class, ['item' => $item])
+        Livewire::test(Form::class)
+            ->call('edit', $item->id)
             ->set('form.name', 'Cordless drill')
             ->assertDontSee('Already in your inventory?');
     }
@@ -258,6 +263,7 @@ class ItemsTest extends TestCase
         Item::factory()->for($otherHome)->create(['name' => 'Cordless drill']);
 
         Livewire::test(Form::class)
+            ->call('create')
             ->set('form.name', 'drill')
             ->assertDontSee('Already in your inventory?')
             ->assertDontSee('Cordless drill');
@@ -266,6 +272,7 @@ class ItemsTest extends TestCase
     public function test_form_requires_a_name_and_complete_dimensions(): void
     {
         Livewire::test(Form::class)
+            ->call('create')
             ->set('form.name', '')
             ->set('form.w', '10')
             ->call('save')
@@ -276,19 +283,45 @@ class ItemsTest extends TestCase
     {
         $item = Item::factory()->for($this->home)->withDimensions(new \App\Support\Dimensions(250, 220, 90))->create(['name' => 'Old name']);
 
-        Livewire::test(Form::class, ['item' => $item])
+        Livewire::test(Form::class)
+            ->call('edit', $item->id)
             ->assertSet('form.name', 'Old name')
             ->assertSet('form.w', '25')
             ->set('form.name', 'New name')
             ->call('save')
-            ->assertRedirect(route('items.show', $item));
+            ->assertDispatched('item-saved', itemId: $item->id)
+            ->assertSet('open', false);
 
         $this->assertSame('New name', $item->fresh()->name);
+    }
+
+    public function test_another_homes_item_cannot_be_opened_for_editing(): void
+    {
+        $otherHome = Home::factory()->create();
+        $foreign = Item::factory()->for($otherHome)->create();
+
+        $this->expectException(ModelNotFoundException::class);
+
+        Livewire::test(Form::class)->call('edit', $foreign->id);
+    }
+
+    public function test_the_detail_screen_refreshes_when_the_lightbox_saves(): void
+    {
+        $item = Item::factory()->for($this->home)->create(['name' => 'Old name']);
+
+        $component = Livewire::test(Show::class, ['item' => $item]);
+
+        $item->update(['name' => 'New name']);
+
+        $component
+            ->dispatch('item-saved', itemId: $item->id)
+            ->assertSee('New name');
     }
 
     public function test_form_saves_a_warranty_date_shown_active_on_the_detail(): void
     {
         Livewire::test(Form::class)
+            ->call('create')
             ->set('form.name', 'Espresso machine')
             ->set('form.warrantyUntil', today()->addYear()->toDateString())
             ->call('save')

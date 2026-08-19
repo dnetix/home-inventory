@@ -82,11 +82,11 @@
             @endunless
             <span class="flex-1"></span>
             <div id="topbar-actions" class="flex shrink-0 items-center gap-2 empty:hidden"></div>
-            <a href="{{ route('items.create') }}" wire:navigate
+            <button type="button" x-data x-on:click="Livewire.dispatch('item-editor:create')"
                 class="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[11px] bg-accent px-3.5 text-[14.5px] font-bold whitespace-nowrap text-on-accent shadow-[0_6px_16px_-8px_var(--accent)] transition active:scale-[0.975] active:bg-accent-press">
                 <x-icon name="plus" :size="17" :stroke="2.2" />
                 Add item
-            </a>
+            </button>
         </header>
 
         <main class="flex flex-1 flex-col">
@@ -98,10 +98,10 @@
     <nav class="fixed inset-x-0 bottom-0 z-40 flex items-start justify-around border-t border-line bg-screen px-2 pt-[11px] pb-[max(env(safe-area-inset-bottom),18px)] lg:hidden">
         @foreach ($tabs as $tab)
             @if ($tab === null)
-                <a href="{{ route('items.create') }}" wire:navigate
-                    class="-mt-6 flex size-14 items-center justify-center rounded-[19px] bg-accent text-on-accent shadow-[0_10px_22px_-8px_var(--accent)] transition active:scale-[0.92]">
+                <button type="button" x-data x-on:click="Livewire.dispatch('item-editor:create')"
+                    class="-mt-6 flex size-14 cursor-pointer items-center justify-center rounded-[19px] bg-accent text-on-accent shadow-[0_10px_22px_-8px_var(--accent)] transition active:scale-[0.92]">
                     <x-icon name="plus" :size="26" />
-                </a>
+                </button>
             @else
                 <a href="{{ route($tab['route']) }}" wire:navigate
                     class="flex w-16 flex-col items-center gap-1 transition {{ request()->routeIs($tab['active']) ? 'text-accent' : 'text-ink-3' }}">
@@ -111,6 +111,9 @@
             @endif
         @endforeach
     </nav>
+
+    {{-- Item create/edit lightbox — one instance for the whole app --}}
+    <livewire:items.form />
 
     {{-- Toast --}}
     <div x-data="{ msg: @js(session('toast')), show: false, timer: null, pop(m) { this.msg = m; this.show = true; clearTimeout(this.timer); this.timer = setTimeout(() => this.show = false, 2400) } }"

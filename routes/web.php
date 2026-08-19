@@ -22,9 +22,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/', Dashboard::class)->name('dashboard');
 
     Route::get('/items', Items\Index::class)->name('items.index');
-    Route::get('/items/create', Items\Form::class)->name('items.create');
     Route::get('/items/{item}', Items\Show::class)->name('items.show');
-    Route::get('/items/{item}/edit', Items\Form::class)->name('items.edit');
 
     Route::get('/places', Places\Index::class)->name('places.index');
     Route::get('/places/{place}', Places\Show::class)->name('places.show');

@@ -9,9 +9,8 @@
         <div class="mb-3 flex items-center justify-between">
             <x-ui.section-label>Item details</x-ui.section-label>
             <div class="flex items-center gap-1">
-                <a href="{{ route('items.edit', $item) }}" wire:navigate>
-                    <x-ui.icon-btn icon="edit" :size="16" bare />
-                </a>
+                <x-ui.icon-btn icon="edit" :size="16" bare
+                    x-on:click="Livewire.dispatch('item-editor:edit', { itemId: {{ $item->id }} })" />
                 <x-ui.icon-btn icon="x" :size="16" bare wire:click="$set('selected', null)" />
             </div>
         </div>

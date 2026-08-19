@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Session;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
@@ -80,6 +81,13 @@ class Index extends Component
         'broken' => 'Broken',
         'removed' => 'Removed',
     ];
+
+    /**
+     * The item lightbox saved — re-render so the list and detail pane
+     * recompute with the change.
+     */
+    #[On('item-saved')]
+    public function refreshItems(): void {}
 
     public function updated(string $property): void
     {

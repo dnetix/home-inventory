@@ -15,14 +15,23 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 
+/**
+ * The item create/edit lightbox. Mounted once in the app layout and opened
+ * from anywhere via the item-editor:create / item-editor:edit events, so
+ * saving never navigates and the host screen keeps its state (search,
+ * filters, scroll). Hosts refresh through the item-saved event.
+ */
 class Form extends Component
 {
     use AuthorizesRequests, WithFileUploads;
+
+    public bool $open = false;
 
     public ItemForm $form;
 
@@ -31,20 +40,46 @@ class Form extends Component
 
     public bool $removePhoto = false;
 
-    public function mount(?Item $item = null): void
+    #[On('item-editor:create')]
+    public function create(): void
     {
-        if ($item?->exists) {
-            $this->authorize('update', $item);
-            $this->form->setItem($item->load('tags'));
-        } else {
-            $this->authorize('create', Item::class);
+        $this->authorize('create', Item::class);
 
-            // Making inventory means many items in a row from the same spot:
-            // prefill the pickers with what the last saved item used. Stale or
-            // cross-home ids resolve to null through the home-scoped queries.
-            $this->form->placeId = Place::query()->find(session('items.last_place_id'))?->id;
-            $this->form->categoryId = Category::query()->find(session('items.last_category_id'))?->id;
-        }
+        $this->resetEditor();
+
+        // Making inventory means many items in a row from the same spot:
+        // prefill the pickers with what the last saved item used. Stale or
+        // cross-home ids resolve to null through the home-scoped queries.
+        $this->form->placeId = Place::query()->find(session('items.last_place_id'))?->id;
+        $this->form->categoryId = Category::query()->find(session('items.last_category_id'))?->id;
+
+        $this->open = true;
+    }
+
+    #[On('item-editor:edit')]
+    public function edit(int $itemId): void
+    {
+        $item = Item::withRemoved()->findOrFail($itemId);
+
+        $this->authorize('update', $item);
+
+        $this->resetEditor();
+        $this->form->setItem($item->load('tags'));
+
+        $this->open = true;
+    }
+
+    public function close(): void
+    {
+        $this->open = false;
+        $this->resetEditor();
+    }
+
+    private function resetEditor(): void
+    {
+        $this->form->reset();
+        $this->reset('photo', 'removePhoto');
+        $this->resetValidation();
     }
 
     public function save(): void
@@ -66,9 +101,10 @@ class Form extends Component
 
         $this->applyPhoto($item, $path);
 
-        session()->flash('toast', $this->form->item !== null ? 'Changes saved' : 'Item added');
+        $this->dispatch('toast', message: $this->form->item !== null ? 'Changes saved' : 'Item added');
+        $this->dispatch('item-saved', itemId: $item->id);
 
-        $this->redirectRoute('items.show', $item, navigate: true);
+        $this->close();
     }
 
     public function clearPhoto(): void
@@ -169,6 +205,6 @@ class Form extends Component
 
     public function render(): View
     {
-        return view('livewire.items.form')->title($this->form->item !== null ? 'Edit item' : 'New item');
+        return view('livewire.items.form');
     }
 }

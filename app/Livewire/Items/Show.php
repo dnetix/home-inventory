@@ -11,6 +11,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -32,6 +33,12 @@ class Show extends Component
         $this->authorize('view', $item);
 
         $this->item = $item->load(['category.parent', 'place', 'tags', 'activeLend']);
+    }
+
+    #[On('item-saved')]
+    public function refreshItem(): void
+    {
+        $this->item->refresh()->load(['category.parent', 'place', 'tags', 'activeLend']);
     }
 
     public function closeMenu(): void
