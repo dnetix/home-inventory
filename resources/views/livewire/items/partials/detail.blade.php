@@ -2,6 +2,7 @@
 @php
     $crumb = $item->place_id ? $this->placeIndex->breadcrumb($item->place_id) : [];
     $lend = $item->activeLend;
+    $photoUrl = $item->photo_path ? $item->photoUrl() : null;
 @endphp
 
 <div>
@@ -16,27 +17,49 @@
         </div>
     @endif
 
-    {{-- Photo: tap to add or replace right from the detail view --}}
-    <div x-data>
+    {{-- Photo: camera button replaces it, tapping the picture opens it full screen --}}
+    <div x-data="{ viewer: false }">
         <input type="file" accept="image/*" x-ref="detailFile" class="hidden"
             x-on:change="$event.target.files[0] && window.shrinkPhoto($event.target.files[0]).then((file) => { $wire.upload('detailPhoto', file); $refs.detailFile.value = '' })">
-        <button type="button" x-on:click="$refs.detailFile.click()"
-            class="relative block w-full cursor-pointer overflow-hidden rounded-[18px]">
-            @if ($item->photo_path)
-                <img src="{{ $item->photoUrl() }}" alt="{{ $item->name }}"
-                    class="h-[188px] w-full rounded-[18px] border border-line object-cover">
-                <span class="absolute right-2.5 bottom-2.5 flex size-9 items-center justify-center rounded-full border border-line bg-surface text-ink-2 shadow-sm">
+        @if ($item->photo_path)
+            <div class="relative w-full">
+                <button type="button" x-on:click="viewer = true"
+                    class="block w-full cursor-zoom-in overflow-hidden rounded-[18px]">
+                    <img src="{{ $photoUrl }}" alt="{{ $item->name }}"
+                        class="h-[188px] w-full rounded-[18px] border border-line object-cover">
+                </button>
+                <button type="button" x-on:click="$refs.detailFile.click()" title="Change photo"
+                    class="absolute right-2.5 bottom-2.5 flex size-9 cursor-pointer items-center justify-center rounded-full border border-line bg-surface text-ink-2 shadow-sm transition active:scale-90">
                     <x-icon name="camera" :size="17" />
+                </button>
+                <span wire:loading wire:target="detailPhoto"
+                    class="absolute inset-0 flex items-center justify-center rounded-[18px] bg-[rgba(8,10,15,0.45)] text-[12px] font-bold text-white">
+                    Uploading…
                 </span>
-            @else
+            </div>
+
+            {{-- Full-screen viewer: the whole photo, uncropped --}}
+            <div x-show="viewer" x-cloak x-transition.opacity.duration.150ms
+                x-on:keydown.escape.window="viewer = false" x-on:click.self="viewer = false"
+                class="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(0,0,0,0.92)] p-4 lg:p-8">
+                <img src="{{ $photoUrl }}" alt="{{ $item->name }}"
+                    class="max-h-full max-w-full rounded-lg object-contain" x-on:click.stop>
+                <button type="button" x-on:click="viewer = false"
+                    class="absolute top-[max(env(safe-area-inset-top),16px)] right-4 flex size-10 cursor-pointer items-center justify-center rounded-full bg-[rgba(255,255,255,0.14)] text-white transition active:scale-90">
+                    <x-icon name="x" :size="20" :stroke="2.2" />
+                </button>
+            </div>
+        @else
+            <button type="button" x-on:click="$refs.detailFile.click()"
+                class="relative block w-full cursor-pointer overflow-hidden rounded-[18px]">
                 <x-ui.ph class="h-[188px] w-full rounded-[18px]" :icon="$item->category?->glyph ?? 'box'"
                     :tint="$item->category?->color" :icon-size="52" label="tap to add a photo" />
-            @endif
-            <span wire:loading wire:target="detailPhoto"
-                class="absolute inset-0 flex items-center justify-center rounded-[18px] bg-[rgba(8,10,15,0.45)] text-[12px] font-bold text-white">
-                Uploading…
-            </span>
-        </button>
+                <span wire:loading wire:target="detailPhoto"
+                    class="absolute inset-0 flex items-center justify-center rounded-[18px] bg-[rgba(8,10,15,0.45)] text-[12px] font-bold text-white">
+                    Uploading…
+                </span>
+            </button>
+        @endif
         @error('detailPhoto')<p class="mt-1.5 text-[13px] font-semibold text-bad">{{ $message }}</p>@enderror
     </div>
 
