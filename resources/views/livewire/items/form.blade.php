@@ -81,7 +81,7 @@
                 <div>
                     <label class="mb-[7px] block text-[12.5px] font-bold text-ink-2">Description</label>
                     <div class="rounded-btn border border-line-2 bg-surface px-3.5 transition focus-within:border-accent focus-within:ring-[3.5px] focus-within:ring-accent-soft">
-                        <textarea wire:model="form.note" rows="2" placeholder="Add a note…"
+                        <textarea wire:model="form.note" rows="2" placeholder="Add a note… paste a link, or [Manual](https://…) to title it"
                             class="w-full resize-none bg-transparent py-[13px] text-[15.5px] font-medium text-ink outline-none placeholder:text-ink-3"></textarea>
                     </div>
                     @error('form.note')<p class="mt-1.5 text-[13px] font-semibold text-bad">{{ $message }}</p>@enderror

@@ -52,7 +52,7 @@ class ItemForm extends Form
 
         return [
             'name' => ['required', 'string', 'max:120'],
-            'note' => ['nullable', 'string', 'max:255'],
+            'note' => ['nullable', 'string', 'max:1000'],
             'warrantyUntil' => ['nullable', 'date'],
             'categoryId' => ['nullable', Rule::exists('categories', 'id')->where('home_id', $homeId)],
             'placeId' => ['nullable', Rule::exists('places', 'id')->where('home_id', $homeId)],

@@ -66,8 +66,12 @@
     <div class="mt-4 flex items-start gap-3">
         <div class="min-w-0 flex-1">
             <div class="text-[22px] font-bold tracking-[-0.3px]">{{ $item->name }}</div>
-            <div class="mt-[3px] text-[13.5px] font-medium text-ink-3">
-                {{ $item->note ?: ($item->category?->label ?? 'Uncategorized') }}
+            <div class="mt-[3px] text-[13.5px] font-medium break-words text-ink-3">
+                @if ($item->note)
+                    {{ \App\Support\NoteLinks::toHtml($item->note) }}
+                @else
+                    {{ $item->category?->label ?? 'Uncategorized' }}
+                @endif
             </div>
         </div>
         <div class="text-[22px] font-bold tabular-nums">{{ $item->value?->format() ?? '—' }}</div>

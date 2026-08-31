@@ -123,6 +123,22 @@ class ItemsTest extends TestCase
             ->assertDontSeeHtml('×1');
     }
 
+    public function test_note_links_render_clickable_on_the_detail_and_plain_in_the_list(): void
+    {
+        $item = Item::factory()->for($this->home)->create([
+            'name' => 'Router',
+            'note' => 'Setup guide: [Manual](https://example.com/router/manual.pdf)',
+        ]);
+
+        Livewire::test(Show::class, ['item' => $item])
+            ->assertSeeHtml('href="https://example.com/router/manual.pdf"')
+            ->assertSeeHtml('>Manual</a>');
+
+        Livewire::test(Index::class)
+            ->assertSee('Setup guide: Manual')
+            ->assertDontSee('https://example.com/router/manual.pdf');
+    }
+
     public function test_index_missing_data_filter(): void
     {
         Item::factory()->for($this->home)->create(['name' => 'Unpriced thing', 'value' => null]);

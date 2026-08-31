@@ -169,7 +169,7 @@
                                             <div class="min-w-0">
                                                 <div class="truncate font-semibold">{{ $item->name }}@if ($item->qty > 1)<span class="font-medium text-ink-3"> ×{{ $item->qty }}</span>@endif</div>
                                                 @if ($item->note)
-                                                    <div class="truncate text-[12px] text-ink-3">{{ $item->note }}</div>
+                                                    <div class="truncate text-[12px] text-ink-3">{{ \App\Support\NoteLinks::toPlain($item->note) }}</div>
                                                 @endif
                                             </div>
                                         </div>
